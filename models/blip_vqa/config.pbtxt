@@ -1,0 +1,26 @@
+name: "blip_vqa"
+backend: "python"
+
+input [
+  {
+    name: "INPUT0"
+    data_type: TYPE_FP32
+    dims: [ 4, 3, 480, 480 ]
+  }
+]
+input [
+  {
+    name: "INPUT1"
+    data_type: TYPE_STRING
+    dims: [ 4 ]
+  }
+]
+output [
+  {
+    name: "OUTPUT0"
+    data_type: TYPE_STRING
+    dims: [ 4 ]
+  }
+]
+
+instance_group [{ kind: KIND_GPU, gpus:[0] }]

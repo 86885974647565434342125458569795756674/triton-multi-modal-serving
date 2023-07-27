@@ -1,0 +1,5 @@
+.Trash*
+BLIP
+*.pt
+*.pth
+__pycache__
