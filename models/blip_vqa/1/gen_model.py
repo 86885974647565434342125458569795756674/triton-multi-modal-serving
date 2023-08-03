@@ -38,9 +38,12 @@ from models.blip_vqa import blip_vqa
 
 image_size = 480
 image = load_demo_image(image_size=image_size)
-images = np.array([image.numpy()[0], image.numpy()[0]])
+
+batch_size = 1
+
+images = np.repeat(image.numpy(), [batch_size], axis=0)
 print(images.shape, images.dtype)
-questions = np.array([b"where is the woman sitting?", b"where is the woman sitting?"])
+questions = np.full((batch_size,), b"where is the woman sitting?")
 print(questions)
 
 
@@ -52,14 +55,13 @@ model = blip_vqa(pretrained=model_url, image_size=image_size, vit="base")
 model.eval()
 model = model.to(device)
 
-from torch.profiler import profile, record_function, ProfilerActivity
-
-with profile(
-    activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True
-) as prof:
-    with torch.no_grad():
-        answers = model(images, questions)
+# from torch.profiler import profile, record_function, ProfilerActivity
+# with profile(
+#     activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True
+# ) as prof:
+with torch.no_grad():
+    answers = model(images, questions)
 print(answers)
 # print(prof.key_averages().table())
 
-torch.save(model, "blip_vqa.pt")
+# torch.save(model, "blip_vqa.pt")

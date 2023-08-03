@@ -5,11 +5,12 @@ import tritonclient.http as httpclient
 from tritonclient.utils import *
 
 model_name = "blip_vqa"
+batch_size = 4
 
 with httpclient.InferenceServerClient("localhost:8000") as client:
     image = np.load("image.npy")
-    input0_data = np.repeat(image, [4], axis=0)
-    input1_data = np.full((4,), b"where is the woman sitting?")
+    input0_data = np.repeat(image, [batch_size], axis=0)
+    input1_data = np.full((batch_size,), b"where is the woman sitting?")
 
     inputs = [
         httpclient.InferInput(

@@ -6,6 +6,7 @@ from torch import nn
 import torch.nn.functional as F
 from transformers import BertTokenizer
 import numpy as np
+import time
 
 
 class BLIP_VQA(nn.Module):
@@ -39,64 +40,67 @@ class BLIP_VQA(nn.Module):
 
     def forward(self, image_batch, question_batch):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print("batch size:", question_batch.size)
+
+        start = time.time()
         image_batch = torch.from_numpy(image_batch).to(device)
         image_embeds_batch = self.visual_encoder(image_batch)
         image_atts = torch.ones(
             torch.unsqueeze(image_embeds_batch[0], 0).size()[:-1], dtype=torch.long
         ).to(device)
-        print(image_embeds_batch.shape, image_atts.shape)
+        image_atts = torch.ones(image_embeds_batch.size()[:-1], dtype=torch.long).to(
+            device
+        )
+        end = time.time()
+        print("visual_encoder time:", end - start)
 
-        answers = []
-        for i, q in enumerate(question_batch):
-            question = self.tokenizer(
-                q.decode("utf-8"),
-                padding="longest",
-                truncation=True,
-                max_length=35,
-                return_tensors="pt",
-            ).to(device)
-
-            image_embeds = torch.unsqueeze(image_embeds_batch[i], 0)
-
-            question.input_ids[:, 0] = self.tokenizer.enc_token_id
-            question_output = self.text_encoder(
-                question.input_ids,
-                attention_mask=question.attention_mask,
-                encoder_hidden_states=image_embeds,
-                encoder_attention_mask=image_atts,
-                return_dict=True,
-            )
-
-            num_beams = 3
-            question_states = question_output.last_hidden_state.repeat_interleave(
-                num_beams, dim=0
-            )
-            question_atts = torch.ones(
-                question_states.size()[:-1], dtype=torch.long
-            ).to(question_states.device)
-            model_kwargs = {
-                "encoder_hidden_states": question_states,
-                "encoder_attention_mask": question_atts,
-            }
-
-            bos_ids = torch.full(
-                (1, 1),
-                fill_value=self.tokenizer.bos_token_id,
-                device=device,
-            )
-
-            outputs = self.text_decoder.generate(
-                input_ids=bos_ids,
-                max_length=10,
-                min_length=1,
-                num_beams=num_beams,
-                eos_token_id=self.tokenizer.sep_token_id,
-                pad_token_id=self.tokenizer.pad_token_id,
-                **model_kwargs
-            )
-
-            answer = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-            answers.append(answer.encode())
+        start = time.time()
+        questions = self.tokenizer(
+            [q.decode("utf-8") for q in question_batch],
+            padding="longest",
+            truncation=True,
+            max_length=35,
+            return_tensors="pt",
+        ).to(device)
+        questions.input_ids[:, 0] = self.tokenizer.enc_token_id
+        questions_output = self.text_encoder(
+            questions.input_ids,
+            attention_mask=questions.attention_mask,
+            encoder_hidden_states=image_embeds_batch,
+            encoder_attention_mask=image_atts,
+            return_dict=True,
+        )
+        num_beams = 3
+        question_states = questions_output.last_hidden_state.repeat_interleave(
+            num_beams, dim=0
+        )
+        question_atts = torch.ones(question_states.size()[:-1], dtype=torch.long).to(
+            question_states.device
+        )
+        model_kwargs = {
+            "encoder_hidden_states": question_states,
+            "encoder_attention_mask": question_atts,
+        }
+        bos_ids = torch.full(
+            (question_batch.size, 1),
+            fill_value=self.tokenizer.bos_token_id,
+            device=device,
+        )
+        outputs = self.text_decoder.generate(
+            input_ids=bos_ids,
+            max_length=10,
+            min_length=1,
+            num_beams=num_beams,
+            eos_token_id=self.tokenizer.sep_token_id,
+            pad_token_id=self.tokenizer.pad_token_id,
+            **model_kwargs
+        )
+        answers = [
+            self.tokenizer.decode(output, skip_special_tokens=True).encode()
+            for output in outputs
+        ]
+        end = time.time()
+        print("text_encoder time:", end - start)
 
         return np.array(answers)
 
