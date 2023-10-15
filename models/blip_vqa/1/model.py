@@ -76,15 +76,17 @@ class TritonPythonModel:
             # Get INPUT1
             in_1 = pb_utils.get_input_tensor_by_name(request, "INPUT1")
 
-            with profile(
-                activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-                record_shapes=True,
-            ) as prof:
-                with torch.no_grad():
-                    out_0 = self.model(in_0.as_numpy(), in_1.as_numpy())
-
-            with open("/workspace/profiletable.txt", "w") as f:
-                print(prof.key_averages().table(), file=f)
+            with torch.no_grad():
+                out_0 = self.model(in_0.as_numpy(), in_1.as_numpy())
+            # with profile(
+            #     activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+            #     record_shapes=True,
+            # ) as prof:
+            #     with torch.no_grad():
+            #         out_0 = self.model(in_0.as_numpy(), in_1.as_numpy())
+            #
+            # with open("/workspace/profiletable.txt", "w") as f:
+            #     print(prof.key_averages().table(), file=f)
 
             out_tensor_0 = pb_utils.Tensor("OUTPUT0", out_0.astype(output0_dtype))
 

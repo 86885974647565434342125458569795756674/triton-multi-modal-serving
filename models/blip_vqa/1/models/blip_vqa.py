@@ -56,7 +56,7 @@ class BLIP_VQA(nn.Module):
 
         start = time.time()
         questions = self.tokenizer(
-            [q.decode("utf-8") for q in question_batch],
+            [q[0].decode("utf-8") for q in question_batch],
             padding="longest",
             truncation=True,
             max_length=35,
@@ -86,6 +86,9 @@ class BLIP_VQA(nn.Module):
             fill_value=self.tokenizer.bos_token_id,
             device=device,
         )
+        end = time.time()
+        print("text_encoder time:", end - start)
+
         outputs = self.text_decoder.generate(
             input_ids=bos_ids,
             max_length=10,
@@ -95,12 +98,13 @@ class BLIP_VQA(nn.Module):
             pad_token_id=self.tokenizer.pad_token_id,
             **model_kwargs
         )
+        end = time.time()
+        print("text_decoder time:", end - start)
+
         answers = [
-            self.tokenizer.decode(output, skip_special_tokens=True).encode()
+            [self.tokenizer.decode(output, skip_special_tokens=True).encode()]
             for output in outputs
         ]
-        end = time.time()
-        print("text_encoder time:", end - start)
 
         return np.array(answers)
 
