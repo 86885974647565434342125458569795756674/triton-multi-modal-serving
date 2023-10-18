@@ -5,7 +5,7 @@ import tritonclient.http as httpclient
 from tritonclient.utils import *
 
 model_name = "blip_vqa"
-batch_size = 2
+batch_size = 8
 
 with httpclient.InferenceServerClient("localhost:8000") as client:
     # image = np.load("image1.npy")
@@ -21,8 +21,12 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
     )
 
     inputs = [
-        httpclient.InferInput("INPUT0", input0_data.shape, np_to_triton_dtype(input0_data.dtype)),
-        httpclient.InferInput("INPUT1", input1_data.shape, np_to_triton_dtype(input1_data.dtype)),
+        httpclient.InferInput(
+            "INPUT0", input0_data.shape, np_to_triton_dtype(input0_data.dtype)
+        ),
+        httpclient.InferInput(
+            "INPUT1", input1_data.shape, np_to_triton_dtype(input1_data.dtype)
+        ),
     ]
 
     inputs[0].set_data_from_numpy(input0_data)
