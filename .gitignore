@@ -3,3 +3,4 @@ BLIP
 *.pt
 *.pth
 __pycache__
+result.txt

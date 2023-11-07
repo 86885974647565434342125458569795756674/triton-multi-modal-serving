@@ -64,6 +64,8 @@ class BLIP_VQA(nn.Module):
             return_tensors="pt",
         ).to(device)
         questions.input_ids[:, 0] = self.tokenizer.enc_token_id
+        print(images_embeds.size())
+        print(image_atts.size())
         questions_output = self.text_encoder(
             questions.input_ids,
             attention_mask=questions.attention_mask,

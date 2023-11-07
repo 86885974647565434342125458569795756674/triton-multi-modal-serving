@@ -67,9 +67,7 @@ image2 = np.load("/workspace/image2.npy")
 
 images = np.array([image1, image2])
 print(images.shape, images.dtype)
-questions = np.array(
-    [[b"where is the woman sitting?"], [b"which city is this photo taken?"]]
-)
+questions = np.array([[b"where is the woman sitting?"], [b""]])
 # questions = np.full((batch_size,), b"where is the woman sitting?")
 print(questions)
 
@@ -85,18 +83,3 @@ model = model.to(device)
 with torch.no_grad():
     answers = model(images, questions)
 print(answers)
-
-import shutil
-
-shutil.copyfile(
-    r"/workspace/examples/blip_vqa/1/models/blip_vqa.py",
-    r"/workspace/models/blip_vqa_text_decoder/1/models/blip_vqa.py",
-)
-shutil.copyfile(
-    r"/workspace/examples/blip_vqa/1/models/blip_vqa.py",
-    r"/workspace/models/blip_vqa_text_encoder/1/models/blip_vqa.py",
-)
-shutil.copyfile(
-    r"/workspace/examples/blip_vqa/1/models/blip_vqa.py",
-    r"/workspace/models/blip_vqa_visual_encoder/1/models/blip_vqa.py",
-)
