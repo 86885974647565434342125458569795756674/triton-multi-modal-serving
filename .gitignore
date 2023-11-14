@@ -1,6 +1,7 @@
 .Trash*
 BLIP
-*.pt
+LAVIS
 *.pth
 __pycache__
 result.txt
+test2015

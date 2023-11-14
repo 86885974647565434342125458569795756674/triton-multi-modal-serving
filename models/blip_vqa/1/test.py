@@ -11,7 +11,7 @@ from models.blip_vqa import blip_vqa
 
 images_url = np.array(
     [
-        [b"/workspace/demo.jpg"],
+        [b"/workspace/beach.jpg"],
         [b""],
         [b"/workspace/merlion.png"],
         [b""],

@@ -5,7 +5,7 @@ import tritonclient.http as httpclient
 from tritonclient.utils import *
 
 model_name = "blip_vqa"
-loop_size = 16
+loop_size = 2
 
 with httpclient.InferenceServerClient("localhost:8000") as client:
     input0_data = np.array(

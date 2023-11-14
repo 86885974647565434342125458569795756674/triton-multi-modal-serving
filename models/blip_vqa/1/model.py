@@ -4,7 +4,7 @@ import triton_python_backend_utils as pb_utils
 
 from models.blip_vqa import blip_vqa
 
-ENABLE_MODAL_LEVEL_BATCH = False
+ENABLE_MODAL_LEVEL_BATCH = True
 
 
 class TritonPythonModel:
