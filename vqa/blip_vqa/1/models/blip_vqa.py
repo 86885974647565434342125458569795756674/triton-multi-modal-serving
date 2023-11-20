@@ -44,7 +44,7 @@ class BLIP_VQA(nn.Module):
         decoder_config = BertConfig.from_json_file(med_config)
         self.text_decoder = BertLMHeadModel(config=decoder_config)
 
-    def forward(self, images_url, questions, enable_modal_level_batch=True):
+    def forward(self, image_urls, questions, enable_modal_level_batch=True):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Image Preprocesor
@@ -62,14 +62,14 @@ class BLIP_VQA(nn.Module):
                 ),
             ]
         )
-        images_url = [image_url[0].decode() for image_url in images_url]
+        image_urls = [image_url.decode() for image_url in image_urls]
         images = []
         if enable_modal_level_batch:
-            for image_url in images_url:
+            for image_url in image_urls:
                 if image_url != "":
                     images.append(transform(Image.open(image_url).convert("RGB")))
         else:
-            for image_url in images_url:
+            for image_url in image_urls:
                 if image_url == "":
                     images.append(images[-1].clone())
                 else:
@@ -94,7 +94,7 @@ class BLIP_VQA(nn.Module):
         print(f"[question batch size: {question_batch_size}]")
         start = time.time()
         questions = self.tokenizer(
-            [question[0].decode() for question in questions],
+            [question.decode() for question in questions],
             padding="longest",
             truncation=True,
             max_length=35,
@@ -111,7 +111,7 @@ class BLIP_VQA(nn.Module):
             start = time.time()
             image_embeds_idx = -1
             a_images_embeds = []
-            for image_url in images_url:
+            for image_url in image_urls:
                 if image_url != "":
                     image_embeds_idx += 1
                 a_images_embeds.append(images_embeds[image_embeds_idx])
@@ -165,7 +165,7 @@ class BLIP_VQA(nn.Module):
         )
 
         answers = [
-            [self.tokenizer.decode(output, skip_special_tokens=True).encode()]
+            self.tokenizer.decode(output, skip_special_tokens=True).encode()
             for output in outputs
         ]
         end = time.time()

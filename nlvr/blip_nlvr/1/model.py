@@ -2,9 +2,9 @@ import json
 import torch
 import triton_python_backend_utils as pb_utils
 
-from models.blip_vqa import blip_vqa
+from models.blip_nlvr import blip_nlvr
 
-ENABLE_MODAL_LEVEL_BATCH = True
+# ENABLE_MODAL_LEVEL_BATCH = True
 
 
 class TritonPythonModel:
@@ -32,17 +32,10 @@ class TritonPythonModel:
         # You must parse model_config. JSON string is not parsed here
         self.model_config = json.loads(args["model_config"])
 
-        # Convert Triton types to numpy types
-        self.output0_dtype = pb_utils.triton_string_to_numpy(
-            pb_utils.get_output_config_by_name(self.model_config, "OUTPUT0")[
-                "data_type"
-            ]
-        )
-
         # Instantiate the PyTorch model
-        model_url = "/workspace/model_base_vqa_capfilt_large.pth"
-        config_url = "/workspace/models/blip_vqa/1/configs/med_config.json"
-        self.model = blip_vqa(pretrained=model_url, med_config=config_url)
+        model_url = "/workspace/model_base_nlvr.pth"
+        config_url = "/workspace/nlvr/blip_nlvr/1/configs/med_config.json"
+        self.model = blip_nlvr(pretrained=model_url, med_config=config_url)
         self.model.eval()
         self.model = self.model.to("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -68,7 +61,9 @@ class TritonPythonModel:
           be the same as `requests`
         """
 
-        output0_dtype = self.output0_dtype
+        output_dtype = pb_utils.triton_string_to_numpy(
+            pb_utils.get_output_config_by_name(self.model_config, "ANSWER")["data_type"]
+        )
 
         responses = []
 
@@ -76,21 +71,24 @@ class TritonPythonModel:
         # and create a pb_utils.InferenceResponse for each of them.
         for request in requests:
             # Get INPUT0
-            in_0 = pb_utils.get_input_tensor_by_name(request, "INPUT0")
+            image0s = pb_utils.get_input_tensor_by_name(request, "IMAGE0")
             # Get INPUT1
-            in_1 = pb_utils.get_input_tensor_by_name(request, "INPUT1")
+            image1s = pb_utils.get_input_tensor_by_name(request, "IMAGE1")
+            # Get INPUT2
+            texts = pb_utils.get_input_tensor_by_name(request, "TEXT")
 
             with torch.no_grad():
-                out_0 = self.model(
-                    in_0.as_numpy(),
-                    in_1.as_numpy(),
-                    enable_modal_level_batch=ENABLE_MODAL_LEVEL_BATCH,
+                answer = self.model(
+                    image0s.as_numpy(),
+                    image1s.as_numpy(),
+                    texts.as_numpy(),
+                    # enable_modal_level_batch=ENABLE_MODAL_LEVEL_BATCH,
                 )
 
-            out_tensor_0 = pb_utils.Tensor("OUTPUT0", out_0.astype(output0_dtype))
+            answer_tensor = pb_utils.Tensor("ANSWER", answer.astype(output_dtype))
 
             inference_response = pb_utils.InferenceResponse(
-                output_tensors=[out_tensor_0]
+                output_tensors=[answer_tensor]
             )
             responses.append(inference_response)
 

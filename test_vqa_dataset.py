@@ -1,6 +1,6 @@
 import json
 
-dataset_url = "/workspace/datasets/vqa/vqa_test.json"
+dataset_url = "/workspace/datasets/vqa/anotations.json"
 with open(dataset_url) as f:
     dataset = json.load(f)
 for item in dataset:

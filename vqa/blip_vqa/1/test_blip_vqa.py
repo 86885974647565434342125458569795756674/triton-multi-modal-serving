@@ -9,21 +9,21 @@ from torchvision.transforms.functional import InterpolationMode
 
 from models.blip_vqa import blip_vqa
 
-images_url = np.array(
+image_urls = np.array(
     [
-        [b"/workspace/beach.jpg"],
-        [b""],
-        [b"/workspace/merlion.png"],
-        [b""],
+        b"/workspace/examples/beach.jpg",
+        b"",
+        b"/workspace/examples/merlion.png",
+        b"",
     ]
 )
-print(images_url)
+print(image_urls)
 questions = np.array(
     [
-        [b"where is the woman sitting?"],
-        [b"where is the dog sitting?"],
-        [b""],
-        [b"which city is this photo taken?"],
+        b"where is the woman sitting?",
+        b"where is the dog sitting?",
+        b"",
+        b"which city is this photo taken?",
     ]
 )
 print(questions)
@@ -38,5 +38,5 @@ model.eval()
 model = model.to(device)
 
 with torch.no_grad():
-    answers = model(images_url, questions, enable_modal_level_batch=True)
+    answers = model(image_urls, questions, enable_modal_level_batch=True)
 print(answers)

@@ -1,27 +1,25 @@
 name: "blip_vqa"
 backend: "python"
 
-max_batch_size: 32
-
 input [
   {
-    name: "INPUT0"
+    name: "IMAGE"
     data_type: TYPE_STRING
-    dims: [ 1 ]
+    dims: [ -1 ]
   }
 ]
 input [
   {
-    name: "INPUT1"
+    name: "QUESTION"
     data_type: TYPE_STRING
-    dims: [ 1 ]
+    dims: [ -1 ]
   }
 ]
 output [
   {
-    name: "OUTPUT0"
+    name: "ANSWER"
     data_type: TYPE_STRING
-    dims: [ 1 ]
+    dims: [ -1 ]
   }
 ]
 

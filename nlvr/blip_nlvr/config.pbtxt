@@ -1,0 +1,33 @@
+name: "blip_nlvr"
+backend: "python"
+
+input [
+  {
+    name: "IMAGE0"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
+input [
+  {
+    name: "IMAGE1"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
+input [
+  {
+    name: "TEXT"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
+output [
+  {
+    name: "ANSWER"
+    data_type: TYPE_BOOL
+    dims: [ -1 ]
+  }
+]
+
+instance_group [{ kind: KIND_GPU, gpus:[0] }]
