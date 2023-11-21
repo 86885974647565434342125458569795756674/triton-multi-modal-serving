@@ -1,8 +1,6 @@
 .Trash*
-BLIP
-LAVIS
 *.pth
 __pycache__
-result.txt
-test2015
-a.py
+test2015/
+test1/
+tmp/

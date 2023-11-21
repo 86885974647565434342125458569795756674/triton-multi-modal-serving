@@ -1,8 +1,9 @@
 import json
 
-dataset_url = "/workspace/datasets/vqa/anotations.json"
-with open(dataset_url) as f:
+json_file = "datasets/vqa/test.json"
+with open(json_file) as f:
     dataset = json.load(f)
+
 for item in dataset:
     print(item["image"], item["question"])
 
