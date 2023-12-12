@@ -1,6 +1,6 @@
 .Trash*
 *.pth
-__pycache__
-test2015/
-test1/
+__pycache__/
+datasets/
 tmp/
+result.txt

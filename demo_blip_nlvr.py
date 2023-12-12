@@ -2,10 +2,10 @@ import sys
 
 import numpy as np
 import tritonclient.http as httpclient
-from tritonclient.utils import *
+from tritonclient.utils import np_to_triton_dtype
 
 model_name = "blip_nlvr"
-loop_size = 4
+loop_size = 16
 
 with httpclient.InferenceServerClient("localhost:8000") as client:
     image0_urls = np.array(
@@ -62,10 +62,6 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
 
     answers = response.as_numpy("ANSWER")
 
-    print(
-        "IMAGE0 ({}) + IMAGE1 ({}) + TEXT ({})= ANSWER ({})".format(
-            image0_urls, image1_urls, texts, answers
-        )
-    )
+    print("IMAGE0 ({}) + IMAGE1 ({}) + TEXT ({})= ANSWER ({})".format(image0_urls, image1_urls, texts, answers))
 
     sys.exit(0)

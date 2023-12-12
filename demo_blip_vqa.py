@@ -2,10 +2,10 @@ import sys
 
 import numpy as np
 import tritonclient.http as httpclient
-from tritonclient.utils import *
+from tritonclient.utils import np_to_triton_dtype
 
 model_name = "blip_vqa"
-loop_size = 2
+loop_size = 64
 
 with httpclient.InferenceServerClient("localhost:8000") as client:
     images = np.array(
