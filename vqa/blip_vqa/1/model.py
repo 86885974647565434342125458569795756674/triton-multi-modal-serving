@@ -4,8 +4,6 @@ import triton_python_backend_utils as pb_utils
 
 from models.blip_vqa import blip_vqa
 
-ENABLE_MODAL_LEVEL_BATCH = True
-
 
 class TritonPythonModel:
     """Your Python model must use the same class name. Every Python model
@@ -66,32 +64,27 @@ class TritonPythonModel:
         # Every Python backend must iterate over everyone of the requests
         # and create a pb_utils.InferenceResponse for each of them.
         for request in requests:
-            # Get IMAGE
             images = pb_utils.get_input_tensor_by_name(request, "IMAGE")
-            # Get QUESTION
             questions = pb_utils.get_input_tensor_by_name(request, "QUESTION")
+            use_modal_level_batch = pb_utils.get_input_tensor_by_name(request, "USE_MODAL_LEVEL_BATCH")
 
             with torch.no_grad():
                 answers = self.model(
                     images.as_numpy(),
                     questions.as_numpy(),
-                    enable_modal_level_batch=ENABLE_MODAL_LEVEL_BATCH,
+                    enable_modal_level_batch=use_modal_level_batch.as_numpy()[0],
                 )
 
             answers_tensor = pb_utils.Tensor(
                 "ANSWER",
                 answers.astype(
                     pb_utils.triton_string_to_numpy(
-                        pb_utils.get_output_config_by_name(self.model_config, "ANSWER")[
-                            "data_type"
-                        ]
+                        pb_utils.get_output_config_by_name(self.model_config, "ANSWER")["data_type"]
                     )
                 ),
             )
 
-            inference_response = pb_utils.InferenceResponse(
-                output_tensors=[answers_tensor]
-            )
+            inference_response = pb_utils.InferenceResponse(output_tensors=[answers_tensor])
             responses.append(inference_response)
 
         # You should return a list of pb_utils.InferenceResponse. Length

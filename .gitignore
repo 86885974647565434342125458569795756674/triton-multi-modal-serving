@@ -1,6 +1,7 @@
+*DS_Store
 .Trash*
 *.pth
 __pycache__/
 datasets/
 tmp/
-result.txt
+*.txt

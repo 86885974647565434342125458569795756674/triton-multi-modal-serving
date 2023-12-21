@@ -15,6 +15,13 @@ input [
     dims: [ -1 ]
   }
 ]
+input [
+  {
+    name: "USE_MODAL_LEVEL_BATCH",
+    data_type: TYPE_BOOL
+    dims: [-1]
+  }
+]
 output [
   {
     name: "ANSWER"

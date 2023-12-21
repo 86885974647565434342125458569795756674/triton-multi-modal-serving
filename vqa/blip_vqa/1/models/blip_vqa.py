@@ -6,10 +6,7 @@ from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 import torch
 from torch import nn
-import torch.nn.functional as F
-from transformers import BertTokenizer
 import numpy as np
-import numpy.ma as ma
 import time
 
 
@@ -65,20 +62,19 @@ class BLIP_VQA(nn.Module):
         image_urls = [image_url.decode() for image_url in image_urls]
         images = []
         if enable_modal_level_batch:
+            last_image_url = ""
             for image_url in image_urls:
-                if image_url != "":
+                if image_url != last_image_url:
+                    last_image_url = image_url
                     images.append(transform(Image.open(image_url).convert("RGB")))
         else:
             for image_url in image_urls:
-                if image_url == "":
-                    images.append(images[-1].clone())
-                else:
-                    images.append(transform(Image.open(image_url).convert("RGB")))
+                images.append(transform(Image.open(image_url).convert("RGB")))
         images = torch.stack(images)
+        image_batch_size = images.size(0)
+        torch.cuda.synchronize()
         end = time.time()
-        print(f"[image batch size: {images.size(0)}]")
         image_preprocessor_time = end - start
-        print("image preprocessor time: ", image_preprocessor_time)
 
         # Visual Encoder
         start = time.time()
@@ -87,12 +83,27 @@ class BLIP_VQA(nn.Module):
         torch.cuda.synchronize()
         end = time.time()
         image_encoder_time = end - start
-        print("image encoder time: ", image_encoder_time)
+
+        # Image Autoscaler
+        image_autoscaler_time = 0
+        if enable_modal_level_batch:
+            start = time.time()
+            scaled_images_embeds = []
+            last_image_url = ""
+            image_embeds_idx = -1
+            for image_url in image_urls:
+                if image_url != last_image_url:
+                    last_image_url = image_url
+                    image_embeds_idx += 1
+                scaled_images_embeds.append(images_embeds[image_embeds_idx])
+            images_embeds = torch.stack(scaled_images_embeds)
+            torch.cuda.synchronize()
+            end = time.time()
+            image_autoscaler_time = end - start
 
         # Text Tokenizer
-        question_batch_size = questions.shape[0]
-        print(f"[question batch size: {question_batch_size}]")
         start = time.time()
+        question_batch_size = questions.shape[0]
         questions = self.tokenizer(
             [question.decode() for question in questions],
             padding="longest",
@@ -101,24 +112,9 @@ class BLIP_VQA(nn.Module):
             return_tensors="pt",
         )
         questions.input_ids[:, 0] = self.tokenizer.enc_token_id
+        torch.cuda.synchronize()
         end = time.time()
         text_tokenizer_time = end - start
-        print("text tokenizer time: ", text_tokenizer_time)
-
-        # Image Autoscaler
-        image_autoscaler_time = 0.0
-        if enable_modal_level_batch:
-            start = time.time()
-            image_embeds_idx = -1
-            a_images_embeds = []
-            for image_url in image_urls:
-                if image_url != "":
-                    image_embeds_idx += 1
-                a_images_embeds.append(images_embeds[image_embeds_idx])
-            images_embeds = torch.stack(a_images_embeds)
-            end = time.time()
-            image_autoscaler_time = end - start
-            print("image autoscaler time: ", image_autoscaler_time)
 
         # Text Encoder
         start = time.time()
@@ -132,19 +128,14 @@ class BLIP_VQA(nn.Module):
             return_dict=True,
         )
         num_beams = 3
-        questions_states = questions_output.last_hidden_state.repeat_interleave(
-            num_beams, dim=0
-        )
+        questions_states = questions_output.last_hidden_state.repeat_interleave(num_beams, dim=0)
         torch.cuda.synchronize()
         end = time.time()
         text_encoder_time = end - start
-        print("text encoder time: ", text_encoder_time)
 
         # Text Decoder
         start = time.time()
-        questions_atts = torch.ones(questions_states.size()[:-1], dtype=torch.long).to(
-            device
-        )
+        questions_atts = torch.ones(questions_states.size()[:-1], dtype=torch.long).to(device)
         model_kwargs = {
             "encoder_hidden_states": questions_states,
             "encoder_attention_mask": questions_atts,
@@ -164,21 +155,26 @@ class BLIP_VQA(nn.Module):
             **model_kwargs,
         )
 
-        answers = [
-            self.tokenizer.decode(output, skip_special_tokens=True).encode()
-            for output in outputs
-        ]
+        answers = [self.tokenizer.decode(output, skip_special_tokens=True).encode() for output in outputs]
+        torch.cuda.synchronize()
         end = time.time()
         text_decoder_time = end - start
+        print(f"[image batch size: {image_batch_size}]")
+        print("image preprocessor time: ", image_preprocessor_time)
+        print("image encoder time: ", image_encoder_time)
+        print("image autoscaler time: ", image_autoscaler_time)
+        print(f"[question batch size: {question_batch_size}]")
+        print("text tokenizer time: ", text_tokenizer_time)
+        print("text encoder time: ", text_encoder_time)
         print("text decoder time: ", text_decoder_time)
-        print("")
+        print()
 
-        with open("/workspace/result.txt", "a") as f:
+        with open("/workspace/output.txt", "a") as f:
             print(
                 image_preprocessor_time,
                 image_encoder_time,
-                text_tokenizer_time,
                 image_autoscaler_time,
+                text_tokenizer_time,
                 text_encoder_time,
                 text_decoder_time,
                 sep="\t",
@@ -192,5 +188,5 @@ def blip_vqa(pretrained="", **kwargs):
     model = BLIP_VQA(**kwargs)
     if pretrained:
         model, msg = load_checkpoint(model, pretrained)
-    #         assert(len(msg.missing_keys)==0)
+        # assert len(msg.missing_keys) == 0
     return model

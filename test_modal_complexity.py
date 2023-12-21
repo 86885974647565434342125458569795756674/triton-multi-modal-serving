@@ -1,40 +1,32 @@
 import sys
+import os
 
 import numpy as np
 import tritonclient.http as httpclient
 from tritonclient.utils import np_to_triton_dtype
 
-model_name = "blip_vqa"
-loop_size = 1
+MODEL_NAME = "blip_vqa"
 USE_MODAL_LEVEL_BATCH = False
 
-with httpclient.InferenceServerClient("localhost:8000") as client:
+
+def inference(batch_size):
     images = np.array(
         [
             b"/workspace/examples/beach.jpg",
-            b"/workspace/examples/beach.jpg",
-            b"/workspace/examples/merlion.png",
-            b"/workspace/examples/merlion.png",
         ]
-        * loop_size
+        * batch_size
     )
     questions = np.array(
         [
             b"where is the woman sitting?",
-            b"where is the dog sitting?",
-            b"",
-            b"which city is this photo taken?",
         ]
-        * loop_size
+        * batch_size
     )
     use_modal_level_batch = np.array(
         [
             USE_MODAL_LEVEL_BATCH,
-            USE_MODAL_LEVEL_BATCH,
-            USE_MODAL_LEVEL_BATCH,
-            USE_MODAL_LEVEL_BATCH,
         ]
-        * loop_size
+        * batch_size
     )
 
     inputs = [
@@ -62,13 +54,15 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
     outputs = [
         httpclient.InferRequestedOutput("ANSWER"),
     ]
+    client.infer(MODEL_NAME, inputs, request_id=str(1), outputs=outputs)
 
-    for _ in range(7):
-        response = client.infer(model_name, inputs, request_id=str(1), outputs=outputs)
-        result = response.get_response()
 
-    answers = response.as_numpy("ANSWER")
-
-    print("IMAGE ({}) + QUESTION ({}) = ANSWER ({})".format(images, questions, answers))
-
+os.remove("output.txt")
+with httpclient.InferenceServerClient("localhost:8000") as client:
+    max_batch_size = 64
+    batch_size_list = [1] + list(range(2, max_batch_size + 1, 2))
+    for batch_size in batch_size_list:
+        inference(batch_size)
+        for _ in range(max_batch_size // batch_size):
+            inference(batch_size)
     sys.exit(0)

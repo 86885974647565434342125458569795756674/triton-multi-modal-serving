@@ -1,10 +1,5 @@
-from PIL import Image
 import numpy as np
-import numpy.ma as ma
-import requests
 import torch
-from torchvision import transforms
-from torchvision.transforms.functional import InterpolationMode
 
 
 from models.blip_vqa import blip_vqa
@@ -12,9 +7,9 @@ from models.blip_vqa import blip_vqa
 image_urls = np.array(
     [
         b"/workspace/examples/beach.jpg",
-        b"",
+        b"/workspace/examples/beach.jpg",
         b"/workspace/examples/merlion.png",
-        b"",
+        b"/workspace/examples/merlion.png",
     ]
 )
 print(image_urls)
@@ -39,4 +34,7 @@ model = model.to(device)
 
 with torch.no_grad():
     answers = model(image_urls, questions, enable_modal_level_batch=True)
+print(answers)
+with torch.no_grad():
+    answers = model(image_urls, questions, enable_modal_level_batch=False)
 print(answers)
