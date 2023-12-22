@@ -5,30 +5,21 @@ import tritonclient.http as httpclient
 from tritonclient.utils import np_to_triton_dtype
 
 model_name = "blip_nlvr"
-loop_size = 16
+loop_size = 1
 
 with httpclient.InferenceServerClient("localhost:8000") as client:
-    image0_urls = np.array(
-        [
-            b"/workspace/examples/ex0_0.jpg",
-            b"/workspace/examples/acorns_1.jpg",
-        ]
-        * loop_size
-    )
-    image1_urls = np.array(
-        [
-            b"/workspace/examples/ex0_1.jpg",
-            b"/workspace/examples/acorns_6.jpg",
-        ]
-        * loop_size
-    )
-    texts = np.array(
-        [
-            b"The left image contains twice the number of dogs as the right image, and at least two dogs in total are standing.",
-            b"One image shows exactly two brown acorns in back-to-back caps on green foliage.",
-        ]
-        * loop_size
-    )
+    image0_urls = np.array([
+        b"/workspace/examples/images/ex0_0.jpg",
+        b"/workspace/examples/images/acorns_1.jpg",
+    ] * loop_size)
+    image1_urls = np.array([
+        b"/workspace/examples/images/ex0_1.jpg",
+        b"/workspace/examples/images/acorns_6.jpg",
+    ] * loop_size)
+    texts = np.array([
+        b"The left image contains twice the number of dogs as the right image, and at least two dogs in total are standing.",
+        b"One image shows exactly two brown acorns in back-to-back caps on green foliage.",
+    ] * loop_size)
 
     inputs = [
         httpclient.InferInput(
@@ -57,11 +48,15 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
     ]
 
     for _ in range(7):
-        response = client.infer(model_name, inputs, request_id=str(1), outputs=outputs)
+        response = client.infer(model_name,
+                                inputs,
+                                request_id=str(1),
+                                outputs=outputs)
         result = response.get_response()
 
     answers = response.as_numpy("ANSWER")
 
-    print("IMAGE0 ({}) + IMAGE1 ({}) + TEXT ({})= ANSWER ({})".format(image0_urls, image1_urls, texts, answers))
+    print("IMAGE0 ({}) + IMAGE1 ({}) + TEXT ({})= ANSWER ({})".format(
+        image0_urls, image1_urls, texts, answers))
 
     sys.exit(0)

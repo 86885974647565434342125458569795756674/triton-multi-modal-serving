@@ -10,24 +10,15 @@ USE_MODAL_LEVEL_BATCH = False
 
 
 def inference(batch_size):
-    images = np.array(
-        [
-            b"/workspace/examples/beach.jpg",
-        ]
-        * batch_size
-    )
-    questions = np.array(
-        [
-            b"where is the woman sitting?",
-        ]
-        * batch_size
-    )
-    use_modal_level_batch = np.array(
-        [
-            USE_MODAL_LEVEL_BATCH,
-        ]
-        * batch_size
-    )
+    images = np.array([
+        b"/workspace/examples/beach.jpg",
+    ] * batch_size)
+    questions = np.array([
+        b"where is the woman sitting?",
+    ] * batch_size)
+    use_modal_level_batch = np.array([
+        USE_MODAL_LEVEL_BATCH,
+    ] * batch_size)
 
     inputs = [
         httpclient.InferInput(

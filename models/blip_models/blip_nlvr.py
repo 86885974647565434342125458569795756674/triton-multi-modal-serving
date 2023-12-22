@@ -1,22 +1,20 @@
-from models.med import BertConfig
-from models.nlvr_encoder import BertModel
-from models.vit import interpolate_pos_embed
-from models.blip import create_vit, init_tokenizer, is_url
+from .med import BertConfig
+from .nlvr_encoder import BertModel
+from .vit import interpolate_pos_embed
+from .blip import create_vit, init_tokenizer, is_url
 
 from timm.models.hub import download_cached_file
 
 import os
 import torch
 from torch import nn
-import torch.nn.functional as F
-from transformers import BertTokenizer
-import numpy as np
 from PIL import Image
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 
 
 class BLIP_NLVR(nn.Module):
+
     def __init__(
         self,
         med_config="configs/med_config.json",
@@ -34,13 +32,16 @@ class BLIP_NLVR(nn.Module):
         super().__init__()
 
         self.image_size = image_size
-        self.visual_encoder, vision_width = create_vit(
-            vit, image_size, vit_grad_ckpt, vit_ckpt_layer, drop_path_rate=0.1
-        )
+        self.visual_encoder, vision_width = create_vit(vit,
+                                                       image_size,
+                                                       vit_grad_ckpt,
+                                                       vit_ckpt_layer,
+                                                       drop_path_rate=0.1)
         self.tokenizer = init_tokenizer()
         med_config = BertConfig.from_json_file(med_config)
         med_config.encoder_width = vision_width
-        self.text_encoder = BertModel(config=med_config, add_pooling_layer=False)
+        self.text_encoder = BertModel(config=med_config,
+                                      add_pooling_layer=False)
 
         self.cls_head = nn.Sequential(
             nn.Linear(
@@ -57,19 +58,17 @@ class BLIP_NLVR(nn.Module):
         # Preprocess
         image0_urls = [image0_url.decode() for image0_url in image0_urls]
         image1_urls = [image1_url.decode() for image1_url in image1_urls]
-        transform = transforms.Compose(
-            [
-                transforms.Resize(
-                    (self.image_size, self.image_size),
-                    interpolation=InterpolationMode.BICUBIC,
-                ),
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    (0.48145466, 0.4578275, 0.40821073),
-                    (0.26862954, 0.26130258, 0.27577711),
-                ),
-            ]
-        )
+        transform = transforms.Compose([
+            transforms.Resize(
+                (self.image_size, self.image_size),
+                interpolation=InterpolationMode.BICUBIC,
+            ),
+            transforms.ToTensor(),
+            transforms.Normalize(
+                (0.48145466, 0.4578275, 0.40821073),
+                (0.26862954, 0.26130258, 0.27577711),
+            ),
+        ])
         images = []
         for image0_url in image0_urls:
             images.append(transform(Image.open(image0_url).convert("RGB")))
@@ -80,13 +79,15 @@ class BLIP_NLVR(nn.Module):
         # Visual Encoder
         images = images.to(device)
         images_embeds = self.visual_encoder(images)
-        images_atts = torch.ones(images_embeds.size()[:-1], dtype=torch.long).to(device)
-        image0s_embeds, image1s_embeds = torch.split(images_embeds, texts.shape[0])
+        images_atts = torch.ones(images_embeds.size()[:-1],
+                                 dtype=torch.long).to(device)
+        image0s_embeds, image1s_embeds = torch.split(images_embeds,
+                                                     texts.shape[0])
 
         # Text Encoder
-        texts = self.tokenizer(
-            [text.decode() for text in texts], padding="longest", return_tensors="pt"
-        ).to(device)
+        texts = self.tokenizer([text.decode() for text in texts],
+                               padding="longest",
+                               return_tensors="pt").to(device)
         texts.input_ids[:, 0] = self.tokenizer.enc_token_id
 
         output = self.text_encoder(
@@ -94,8 +95,8 @@ class BLIP_NLVR(nn.Module):
             attention_mask=texts.attention_mask,
             encoder_hidden_states=[image0s_embeds, image1s_embeds],
             encoder_attention_mask=[
-                images_atts[: image0s_embeds.size(0)],
-                images_atts[image0s_embeds.size(0) :],
+                images_atts[:image0s_embeds.size(0)],
+                images_atts[image0s_embeds.size(0):],
             ],
             return_dict=True,
         )
@@ -119,9 +120,9 @@ def blip_nlvr(pretrained="", **kwargs):
 
 def load_checkpoint(model, url_or_filename):
     if is_url(url_or_filename):
-        cached_file = download_cached_file(
-            url_or_filename, check_hash=False, progress=True
-        )
+        cached_file = download_cached_file(url_or_filename,
+                                           check_hash=False,
+                                           progress=True)
         checkpoint = torch.load(cached_file, map_location="cpu")
     elif os.path.isfile(url_or_filename):
         checkpoint = torch.load(url_or_filename, map_location="cpu")
@@ -130,8 +131,7 @@ def load_checkpoint(model, url_or_filename):
     state_dict = checkpoint["model"]
 
     state_dict["visual_encoder.pos_embed"] = interpolate_pos_embed(
-        state_dict["visual_encoder.pos_embed"], model.visual_encoder
-    )
+        state_dict["visual_encoder.pos_embed"], model.visual_encoder)
 
     for key in list(state_dict.keys()):
         if "crossattention.self." in key:

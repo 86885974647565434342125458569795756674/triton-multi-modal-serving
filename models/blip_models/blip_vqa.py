@@ -1,5 +1,5 @@
-from models.med import BertConfig, BertModel, BertLMHeadModel
-from models.blip import create_vit, init_tokenizer, load_checkpoint
+from .med import BertConfig, BertModel, BertLMHeadModel
+from .blip import create_vit, init_tokenizer, load_checkpoint
 
 from PIL import Image
 from torchvision import transforms
@@ -11,6 +11,7 @@ import time
 
 
 class BLIP_VQA(nn.Module):
+
     def __init__(
         self,
         med_config="configs/med_config.json",
@@ -28,15 +29,18 @@ class BLIP_VQA(nn.Module):
         super().__init__()
 
         self.image_size = image_size
-        self.visual_encoder, vision_width = create_vit(
-            vit, image_size, vit_grad_ckpt, vit_ckpt_layer, drop_path_rate=0.1
-        )
+        self.visual_encoder, vision_width = create_vit(vit,
+                                                       image_size,
+                                                       vit_grad_ckpt,
+                                                       vit_ckpt_layer,
+                                                       drop_path_rate=0.1)
 
         self.tokenizer = init_tokenizer()
 
         encoder_config = BertConfig.from_json_file(med_config)
         encoder_config.encoder_width = vision_width
-        self.text_encoder = BertModel(config=encoder_config, add_pooling_layer=False)
+        self.text_encoder = BertModel(config=encoder_config,
+                                      add_pooling_layer=False)
 
         decoder_config = BertConfig.from_json_file(med_config)
         self.text_decoder = BertLMHeadModel(config=decoder_config)
@@ -46,19 +50,17 @@ class BLIP_VQA(nn.Module):
 
         # Image Preprocesor
         start = time.time()
-        transform = transforms.Compose(
-            [
-                transforms.Resize(
-                    (self.image_size, self.image_size),
-                    interpolation=InterpolationMode.BICUBIC,
-                ),
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    (0.48145466, 0.4578275, 0.40821073),
-                    (0.26862954, 0.26130258, 0.27577711),
-                ),
-            ]
-        )
+        transform = transforms.Compose([
+            transforms.Resize(
+                (self.image_size, self.image_size),
+                interpolation=InterpolationMode.BICUBIC,
+            ),
+            transforms.ToTensor(),
+            transforms.Normalize(
+                (0.48145466, 0.4578275, 0.40821073),
+                (0.26862954, 0.26130258, 0.27577711),
+            ),
+        ])
         image_urls = [image_url.decode() for image_url in image_urls]
         images = []
         if enable_modal_level_batch:
@@ -66,7 +68,8 @@ class BLIP_VQA(nn.Module):
             for image_url in image_urls:
                 if image_url != last_image_url:
                     last_image_url = image_url
-                    images.append(transform(Image.open(image_url).convert("RGB")))
+                    images.append(
+                        transform(Image.open(image_url).convert("RGB")))
         else:
             for image_url in image_urls:
                 images.append(transform(Image.open(image_url).convert("RGB")))
@@ -118,7 +121,8 @@ class BLIP_VQA(nn.Module):
 
         # Text Encoder
         start = time.time()
-        images_atts = torch.ones(images_embeds.size()[:-1], dtype=torch.long).to(device)
+        images_atts = torch.ones(images_embeds.size()[:-1],
+                                 dtype=torch.long).to(device)
         questions = questions.to(device)
         questions_output = self.text_encoder(
             questions.input_ids,
@@ -127,15 +131,17 @@ class BLIP_VQA(nn.Module):
             encoder_attention_mask=images_atts,
             return_dict=True,
         )
-        num_beams = 3
-        questions_states = questions_output.last_hidden_state.repeat_interleave(num_beams, dim=0)
+        num_beams = 1
+        questions_states = questions_output.last_hidden_state.repeat_interleave(
+            num_beams, dim=0)
         torch.cuda.synchronize()
         end = time.time()
         text_encoder_time = end - start
 
         # Text Decoder
         start = time.time()
-        questions_atts = torch.ones(questions_states.size()[:-1], dtype=torch.long).to(device)
+        questions_atts = torch.ones(questions_states.size()[:-1],
+                                    dtype=torch.long).to(device)
         model_kwargs = {
             "encoder_hidden_states": questions_states,
             "encoder_attention_mask": questions_atts,
@@ -155,7 +161,10 @@ class BLIP_VQA(nn.Module):
             **model_kwargs,
         )
 
-        answers = [self.tokenizer.decode(output, skip_special_tokens=True).encode() for output in outputs]
+        answers = [
+            self.tokenizer.decode(output, skip_special_tokens=True).encode()
+            for output in outputs
+        ]
         torch.cuda.synchronize()
         end = time.time()
         text_decoder_time = end - start

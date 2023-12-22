@@ -2,9 +2,7 @@ import json
 import torch
 import triton_python_backend_utils as pb_utils
 
-from models.blip_nlvr import blip_nlvr
-
-# ENABLE_MODAL_LEVEL_BATCH = True
+from models import blip_vqa
 
 
 class TritonPythonModel:
@@ -33,11 +31,13 @@ class TritonPythonModel:
         self.model_config = json.loads(args["model_config"])
 
         # Instantiate the PyTorch model
-        model_url = "/workspace/model_base_nlvr.pth"
-        config_url = "/workspace/nlvr/blip_nlvr/1/configs/med_config.json"
-        self.model = blip_nlvr(pretrained=model_url, med_config=config_url)
+        model_url = "/checkpoints/model_base_vqa_capfilt_large.pth"
+        # import os
+        # config_url = os.getcwd() + "configs/med_config.json"
+        self.model = blip_vqa(pretrained=model_url)
         self.model.eval()
-        self.model = self.model.to("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = self.model.to(
+            "cuda" if torch.cuda.is_available() else "cpu")
 
     def execute(self, requests):
         """`execute` must be implemented in every Python model. `execute`
@@ -61,35 +61,34 @@ class TritonPythonModel:
           be the same as `requests`
         """
 
-        output_dtype = pb_utils.triton_string_to_numpy(
-            pb_utils.get_output_config_by_name(self.model_config, "ANSWER")["data_type"]
-        )
-
         responses = []
 
         # Every Python backend must iterate over everyone of the requests
         # and create a pb_utils.InferenceResponse for each of them.
         for request in requests:
-            # Get INPUT0
-            image0s = pb_utils.get_input_tensor_by_name(request, "IMAGE0")
-            # Get INPUT1
-            image1s = pb_utils.get_input_tensor_by_name(request, "IMAGE1")
-            # Get INPUT2
-            texts = pb_utils.get_input_tensor_by_name(request, "TEXT")
+            images = pb_utils.get_input_tensor_by_name(request, "IMAGE")
+            questions = pb_utils.get_input_tensor_by_name(request, "QUESTION")
+            use_modal_level_batch = pb_utils.get_input_tensor_by_name(
+                request, "USE_MODAL_LEVEL_BATCH")
 
             with torch.no_grad():
-                answer = self.model(
-                    image0s.as_numpy(),
-                    image1s.as_numpy(),
-                    texts.as_numpy(),
-                    # enable_modal_level_batch=ENABLE_MODAL_LEVEL_BATCH,
+                answers = self.model(
+                    images.as_numpy(),
+                    questions.as_numpy(),
+                    enable_modal_level_batch=use_modal_level_batch.as_numpy()
+                    [0],
                 )
 
-            answer_tensor = pb_utils.Tensor("ANSWER", answer.astype(output_dtype))
+            answers_tensor = pb_utils.Tensor(
+                "ANSWER",
+                answers.astype(
+                    pb_utils.triton_string_to_numpy(
+                        pb_utils.get_output_config_by_name(
+                            self.model_config, "ANSWER")["data_type"])),
+            )
 
             inference_response = pb_utils.InferenceResponse(
-                output_tensors=[answer_tensor]
-            )
+                output_tensors=[answers_tensor])
             responses.append(inference_response)
 
         # You should return a list of pb_utils.InferenceResponse. Length

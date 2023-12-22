@@ -11,13 +11,11 @@ json_file = dataset_dir + "test.json"
 with open(json_file) as f:
     dataset = json.load(f)
 
-
 model_name = "blip_vqa"
 # sample_size = 128
 sample_size = 16
 batch_size = 16
 USE_MODAL_LEVEL_BATCH = True
-
 
 with httpclient.InferenceServerClient("localhost:8000") as client:
     image_batch = []
@@ -58,9 +56,13 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
                 httpclient.InferRequestedOutput("ANSWER"),
             ]
 
-            response = client.infer(model_name, inputs, request_id=str(1), outputs=outputs)
+            response = client.infer(model_name,
+                                    inputs,
+                                    request_id=str(1),
+                                    outputs=outputs)
             result = response.get_response()
 
             answers = response.as_numpy("ANSWER")
-            print("IMAGE ({}) + QUESTION ({}) = ANSWER ({})".format(images, questions, answers))
+            print("IMAGE ({}) + QUESTION ({}) = ANSWER ({})".format(
+                images, questions, answers))
     sys.exit(0)
