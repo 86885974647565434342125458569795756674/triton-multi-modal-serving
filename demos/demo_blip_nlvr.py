@@ -9,12 +9,12 @@ loop_size = 1
 
 with httpclient.InferenceServerClient("localhost:8000") as client:
     image0_urls = np.array([
-        b"/workspace/examples/images/ex0_0.jpg",
-        b"/workspace/examples/images/acorns_1.jpg",
+        b"/workspace/demos/images/ex0_0.jpg",
+        b"/workspace/demos/images/acorns_1.jpg",
     ] * loop_size)
     image1_urls = np.array([
-        b"/workspace/examples/images/ex0_1.jpg",
-        b"/workspace/examples/images/acorns_6.jpg",
+        b"/workspace/demos/images/ex0_1.jpg",
+        b"/workspace/demos/images/acorns_6.jpg",
     ] * loop_size)
     texts = np.array([
         b"The left image contains twice the number of dogs as the right image, and at least two dogs in total are standing.",
@@ -47,12 +47,10 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
         httpclient.InferRequestedOutput("ANSWER"),
     ]
 
-    for _ in range(7):
-        response = client.infer(model_name,
-                                inputs,
-                                request_id=str(1),
-                                outputs=outputs)
-        result = response.get_response()
+    response = client.infer(model_name,
+                            inputs,
+                            request_id=str(1),
+                            outputs=outputs)
 
     answers = response.as_numpy("ANSWER")
 

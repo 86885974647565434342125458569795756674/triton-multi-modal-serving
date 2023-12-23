@@ -2,5 +2,6 @@
 *.pth
 __pycache__/
 datasets/
+pretained/
 tmp/
 .vim-arsync

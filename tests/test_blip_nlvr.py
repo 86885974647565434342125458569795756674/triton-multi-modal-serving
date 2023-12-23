@@ -27,7 +27,7 @@ texts = np.array([
 print(texts)
 
 # model_url = "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_nlvr.pth"
-model_url = "/checkpoints/model_base_nlvr.pth"
+model_url = "/pretrained/model_base_nlvr.pth"
 
 model = blip_nlvr(pretrained=model_url)
 model.eval()

@@ -21,7 +21,7 @@ questions = np.array([
     b"which city is this photo taken?",
 ])
 
-model_url = "/checkpoints/model_base_vqa_capfilt_large.pth"
+model_url = "/pretrained/model_base_vqa_capfilt_large.pth"
 # model_url = "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_vqa_capfilt_large.pth"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

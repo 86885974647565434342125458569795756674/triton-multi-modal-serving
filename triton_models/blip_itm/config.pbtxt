@@ -1,0 +1,26 @@
+name: "blip_itm"
+backend: "python"
+
+input [
+  {
+    name: "IMAGE"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
+input [
+  {
+    name: "CAPTION"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
+output [
+  {
+    name: "SCORE"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  }
+]
+
+instance_group [{ kind: KIND_GPU, gpus:[0] }]

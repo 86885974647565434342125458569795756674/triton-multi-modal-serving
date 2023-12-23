@@ -10,10 +10,10 @@ USE_MODAL_LEVEL_BATCH = False
 
 with httpclient.InferenceServerClient("localhost:8000") as client:
     images = np.array([
-        b"/workspace/examples/images/beach.jpg",
-        b"/workspace/examples/images/beach.jpg",
-        b"/workspace/examples/images/merlion.png",
-        b"/workspace/examples/images/merlion.png",
+        b"/workspace/demos/images/beach.jpg",
+        b"/workspace/demos/images/beach.jpg",
+        b"/workspace/demos/images/merlion.png",
+        b"/workspace/demos/images/merlion.png",
     ] * loop_size)
     questions = np.array([
         b"where is the woman sitting?",
@@ -54,12 +54,10 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
         httpclient.InferRequestedOutput("ANSWER"),
     ]
 
-    for _ in range(7):
-        response = client.infer(model_name,
-                                inputs,
-                                request_id=str(1),
-                                outputs=outputs)
-        result = response.get_response()
+    response = client.infer(model_name,
+                            inputs,
+                            request_id=str(1),
+                            outputs=outputs)
 
     answers = response.as_numpy("ANSWER")
 

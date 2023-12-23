@@ -2,7 +2,7 @@ import json
 import torch
 import triton_python_backend_utils as pb_utils
 
-from models import blip_vqa
+from models import blip_itm
 
 
 class TritonPythonModel:
@@ -31,10 +31,8 @@ class TritonPythonModel:
         self.model_config = json.loads(args["model_config"])
 
         # Instantiate the PyTorch model
-        model_url = "/pretrained/model_base_vqa_capfilt_large.pth"
-        # import os
-        # config_url = os.getcwd() + "configs/med_config.json"
-        self.model = blip_vqa(pretrained=model_url)
+        model_url = "/pretrained/model_base_retrieval_coco.pth"
+        self.model = blip_itm(pretrained=model_url)
         self.model.eval()
         self.model = self.model.to(
             "cuda" if torch.cuda.is_available() else "cpu")
@@ -61,38 +59,29 @@ class TritonPythonModel:
           be the same as `requests`
         """
 
+        output_dtype = pb_utils.triton_string_to_numpy(
+            pb_utils.get_output_config_by_name(self.model_config,
+                                               "SCORE")["data_type"])
+
         responses = []
 
-        # Every Python backend must iterate over everyone of the requests
-        # and create a pb_utils.InferenceResponse for each of them.
         for request in requests:
             images = pb_utils.get_input_tensor_by_name(request, "IMAGE")
-            questions = pb_utils.get_input_tensor_by_name(request, "QUESTION")
-            use_modal_level_batch = pb_utils.get_input_tensor_by_name(
-                request, "USE_MODAL_LEVEL_BATCH")
+            captions = pb_utils.get_input_tensor_by_name(request, "CAPTION")
 
             with torch.no_grad():
-                answers = self.model(
+                answer = self.model(
                     images.as_numpy(),
-                    questions.as_numpy(),
-                    enable_modal_level_batch=use_modal_level_batch.as_numpy()
-                    [0],
+                    captions.as_numpy(),
                 )
 
-            answers_tensor = pb_utils.Tensor(
-                "ANSWER",
-                answers.astype(
-                    pb_utils.triton_string_to_numpy(
-                        pb_utils.get_output_config_by_name(
-                            self.model_config, "ANSWER")["data_type"])),
-            )
+            answer_tensor = pb_utils.Tensor("SCORE",
+                                            answer.astype(output_dtype))
 
             inference_response = pb_utils.InferenceResponse(
-                output_tensors=[answers_tensor])
+                output_tensors=[answer_tensor])
             responses.append(inference_response)
 
-        # You should return a list of pb_utils.InferenceResponse. Length
-        # of this list must match the length of `requests` list.
         return responses
 
     def finalize(self):
