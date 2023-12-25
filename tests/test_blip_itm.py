@@ -28,4 +28,4 @@ model = model.to(device)
 
 with torch.no_grad():
     output = model(image_urls, captions)
-print(output)
+print(output.topk(10))
