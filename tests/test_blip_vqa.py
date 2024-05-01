@@ -9,10 +9,10 @@ import torch
 from models import blip_vqa
 
 image_urls = np.array([
-    b"/workspace/examples/images/beach.jpg",
-    b"/workspace/examples/images/beach.jpg",
-    b"/workspace/examples/images/merlion.png",
-    b"/workspace/examples/images/merlion.png",
+    b"/workspace/demos/images/beach.jpg",
+    b"/workspace/demos/images/beach.jpg",
+    b"/workspace/demos/images/merlion.png",
+    b"/workspace/demos/images/merlion.png",
 ])
 questions = np.array([
     b"where is the woman sitting?",
@@ -21,7 +21,7 @@ questions = np.array([
     b"which city is this photo taken?",
 ])
 
-model_url = "/pretrained/model_base_vqa_capfilt_large.pth"
+model_url = "/workspace/pretrained/model_base_vqa_capfilt_large.pth"
 # model_url = "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_vqa_capfilt_large.pth"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -35,5 +35,4 @@ with torch.no_grad():
     answers = model(image_urls, questions, enable_modal_level_batch=False)
 print(image_urls)
 print(questions)
-print(answers)
 print(answers)

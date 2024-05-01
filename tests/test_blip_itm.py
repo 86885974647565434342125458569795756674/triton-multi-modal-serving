@@ -11,11 +11,11 @@ from models import blip_itm
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # model_url = 'https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_retrieval_coco.pth'
-model_url = "/pretrained/model_base_retrieval_coco.pth"
+model_url = "/workspace/pretrained/model_base_retrieval_coco.pth"
 
 image_urls = np.array([
-    b"/workspace/examples/images/beach.jpg",
-    b"/workspace/examples/images/beach.jpg",
+    b"/workspace/demos/images/beach.jpg",
+    b"/workspace/demos/images/beach.jpg",
 ])
 
 captions = np.array([
@@ -28,4 +28,4 @@ model = model.to(device)
 
 with torch.no_grad():
     output = model(image_urls, captions)
-print(output.topk(10))
+print(output)

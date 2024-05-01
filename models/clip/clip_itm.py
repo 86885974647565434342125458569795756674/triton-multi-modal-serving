@@ -7,9 +7,9 @@ from .clip import load, tokenize
 
 class CLIP_ITM():
 
-    def __init__(self, visual_model_name):
-        self.model, self.preprocess = load(name=visual_model_name)
-        self.dataset = CIFAR100(root=os.path.expanduser("/datasets"),
+    def __init__(self, visual_model_name,model_root,dataset_root):
+        self.model, self.preprocess = load(name=visual_model_name,download_root=model_root)
+        self.dataset = CIFAR100(root=os.path.expanduser(dataset_root),
                                 download=False,
                                 train=False)
 
@@ -39,5 +39,5 @@ class CLIP_ITM():
         return probs[0]
 
 
-def clip_itm(visual_model_name):
-    return CLIP_ITM(visual_model_name)
+def clip_itm(visual_model_name,model_root,dataset_root):
+    return CLIP_ITM(visual_model_name,model_root,dataset_root)

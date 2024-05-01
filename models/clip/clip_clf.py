@@ -7,10 +7,10 @@ from .clip import load, tokenize
 
 class CLIP_CLF():
 
-    def __init__(self, visual_model_name):
-        self.model, self.preprocess = load(name=visual_model_name)
-        self.dataset = CIFAR100(root=os.path.expanduser("/datasets"),
-                                download=False,
+    def __init__(self, visual_model_name,model_root,dataset_root):
+        self.model, self.preprocess = load(name=visual_model_name,download_root=download_root)
+        self.dataset = CIFAR100(root=dataset_root,
+                                download=True,
                                 train=False)
 
     def forward(self, image_id, class_list):
@@ -36,5 +36,5 @@ class CLIP_CLF():
         return probs
 
 
-def clip_clf(visual_model_name):
-    return CLIP_CLF(visual_model_name)
+def clip_clf(visual_model_name,model_root,dataset_root):
+    return CLIP_CLF(visual_model_name,model_root,dataset_root)

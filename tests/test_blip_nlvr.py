@@ -11,12 +11,12 @@ from models import blip_nlvr
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 image0_urls = np.array([
-    b"/workspace/examples/images/ex0_0.jpg",
-    b"/workspace/examples/images/acorns_1.jpg",
+    b"/workspace/demos/images/ex0_0.jpg",
+    b"/workspace/demos/images/acorns_1.jpg",
 ])
 image1_urls = np.array([
-    b"/workspace/examples/images/ex0_1.jpg",
-    b"/workspace/examples/images/acorns_6.jpg",
+    b"/workspace/demos/images/ex0_1.jpg",
+    b"/workspace/demos/images/acorns_6.jpg",
 ])
 print(image0_urls)
 print(image1_urls)
@@ -27,7 +27,7 @@ texts = np.array([
 print(texts)
 
 # model_url = "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_nlvr.pth"
-model_url = "/pretrained/model_base_nlvr.pth"
+model_url = "/workspace/pretrained/model_base_nlvr.pth"
 
 model = blip_nlvr(pretrained=model_url)
 model.eval()
