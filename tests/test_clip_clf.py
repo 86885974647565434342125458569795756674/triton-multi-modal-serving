@@ -13,7 +13,7 @@ visual_model = "ViT-B/16"
 image_id = 3637
 dataset_root="/workspace/datasets"
 model_root="/workspace/pretrained"
-cifar100 = CIFAR100(root=dataset_root, download=True, train=False)
+cifar100 = CIFAR100(root=dataset_root, download=False, train=False)
 _, class_id = cifar100[image_id]
 correct_class = cifar100.classes[class_id]
 class_list = [correct_class]

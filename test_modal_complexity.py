@@ -11,7 +11,7 @@ USE_MODAL_LEVEL_BATCH = False
 
 def inference(batch_size):
     images = np.array([
-        b"/workspace/examples/beach.jpg",
+        b"/workspace/demos/images/beach.jpg",
     ] * batch_size)
     questions = np.array([
         b"where is the woman sitting?",
@@ -48,7 +48,7 @@ def inference(batch_size):
     client.infer(MODEL_NAME, inputs, request_id=str(1), outputs=outputs)
 
 
-os.remove("output.txt")
+#os.remove("output.txt")
 with httpclient.InferenceServerClient("localhost:8000") as client:
     max_batch_size = 64
     batch_size_list = [1] + list(range(2, max_batch_size + 1, 2))
@@ -56,4 +56,4 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
         inference(batch_size)
         for _ in range(max_batch_size // batch_size):
             inference(batch_size)
-    sys.exit(0)
+print("finish")

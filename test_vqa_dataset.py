@@ -1,13 +1,13 @@
 import json
-
+import os
 import sys
 
 import numpy as np
 import tritonclient.http as httpclient
 from tritonclient.utils import np_to_triton_dtype
 
-dataset_dir = "/datasets/vqa/"
-json_file = dataset_dir + "test.json"
+dataset_dir = "/workspace/datasets/vqa/"
+json_file = os.path.join(dataset_dir,"anotations.json")
 with open(json_file) as f:
     dataset = json.load(f)
 
@@ -22,7 +22,7 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
     question_batch = []
     use_modal_level_batch = np.array([USE_MODAL_LEVEL_BATCH] * batch_size)
     for data in dataset[0:sample_size]:
-        image_batch.append(bytes(dataset_dir + data["image"], "utf-8"))
+        image_batch.append(bytes(os.path.join(dataset_dir, data["image"]), "utf-8"))
         question_batch.append(bytes(data["question"], "utf-8"))
         if len(image_batch) == batch_size:
             images = np.array(image_batch)
@@ -65,4 +65,4 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
             answers = response.as_numpy("ANSWER")
             print("IMAGE ({}) + QUESTION ({}) = ANSWER ({})".format(
                 images, questions, answers))
-    sys.exit(0)
+print("finish")

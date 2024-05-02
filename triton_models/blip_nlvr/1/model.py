@@ -33,7 +33,7 @@ class TritonPythonModel:
         self.model_config = json.loads(args["model_config"])
 
         # Instantiate the PyTorch model
-        model_url = "/pretrained/model_base_nlvr.pth"
+        model_url = "/workspace/pretrained/model_base_nlvr.pth"
         self.model = blip_nlvr(pretrained=model_url)
         self.model.eval()
         self.model = self.model.to(

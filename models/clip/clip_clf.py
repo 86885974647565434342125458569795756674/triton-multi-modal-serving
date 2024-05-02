@@ -8,9 +8,9 @@ from .clip import load, tokenize
 class CLIP_CLF():
 
     def __init__(self, visual_model_name,model_root,dataset_root):
-        self.model, self.preprocess = load(name=visual_model_name,download_root=download_root)
+        self.model, self.preprocess = load(name=visual_model_name,download_root=model_root)
         self.dataset = CIFAR100(root=dataset_root,
-                                download=True,
+                                download=False,
                                 train=False)
 
     def forward(self, image_id, class_list):

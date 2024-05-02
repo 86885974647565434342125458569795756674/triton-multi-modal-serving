@@ -3,6 +3,8 @@
 __pycache__/
 datasets/
 pretained/
+pretrained/ViT-B-16.pt
 tmp/
 .vim-arsync
 BLIP
+output.txt

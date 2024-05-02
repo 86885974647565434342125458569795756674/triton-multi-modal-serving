@@ -4,7 +4,6 @@ import triton_python_backend_utils as pb_utils
 
 from models import blip_itm
 
-
 class TritonPythonModel:
     """Your Python model must use the same class name. Every Python model
     that is created must have "TritonPythonModel" as the class name.
@@ -31,11 +30,11 @@ class TritonPythonModel:
         self.model_config = json.loads(args["model_config"])
 
         # Instantiate the PyTorch model
-        model_url = "/pretrained/model_base_retrieval_coco.pth"
+        model_url = "/workspace/pretrained/model_base_retrieval_coco.pth"
         self.model = blip_itm(pretrained=model_url)
         self.model.eval()
         self.model = self.model.to(
-            "cuda" if torch.cuda.is_available() else "cpu")
+                "cuda:0" if torch.cuda.is_available() else "cpu")
 
     def execute(self, requests):
         """`execute` must be implemented in every Python model. `execute`
