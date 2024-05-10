@@ -45,7 +45,7 @@ class BLIP_VQA_TEXT_DECODER(nn.Module):
 
         num_beams = 1
         questions_states = torch.from_numpy(
-            questions_states.reshape(batch_size * num_beams, 9, 768)
+            questions_states.reshape(batch_size * num_beams, -1, 768)
         ).to(device)
         questions_atts = torch.ones(questions_states.size()[:-1], dtype=torch.long).to(
             device

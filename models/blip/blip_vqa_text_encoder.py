@@ -65,7 +65,7 @@ class BLIP_VQA_TEXT_ENCODER(nn.Module):
         questions_states = (
             questions_output.last_hidden_state.repeat_interleave(num_beams, dim=0)
             .numpy(force=True)
-            .reshape(batch_size, num_beams, 9, 768)
+            .reshape(batch_size, num_beams, -1, 768)
         )
 
         end = time.time()

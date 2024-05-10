@@ -16,6 +16,9 @@ images_embeds = np.load("/workspace/pretrained/images_embeds.npy")
 questions = np.array(
     [b"where is the woman sitting?", b"which city is this photo taken?"]
 )
+questions = np.array(
+    [b"where is the woman sitting?"]
+)
 # questions = np.full((batch_size,), b"where is the woman sitting?")
 #print(questions)
 #print(questions.size)

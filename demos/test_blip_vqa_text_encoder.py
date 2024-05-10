@@ -4,12 +4,15 @@ import numpy as np
 import tritonclient.http as httpclient
 from tritonclient.utils import *
 
-batch_size = 1
+batch_size = 6
 
 with httpclient.InferenceServerClient("localhost:8000") as client:
-    input0_data = np.load("/workspace/pretrained/images_embeds.npy")
+    input0_data = np.repeat(np.load("/workspace/pretrained/images_embeds.npy"),batch_size,axis=0)
     input1_data = np.array(
         [b"where is the woman sitting?",b"which city is this photo taken?"]
+    )
+    input1_data = np.array(
+        [b"where is the woman sitting?"]*batch_size
     )
 
     inputs = [

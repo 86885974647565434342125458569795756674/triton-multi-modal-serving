@@ -37,7 +37,7 @@ def load_example_image(image_size):
 #print(images.shape, images.dtype)
 #torch.Size([3, 480, 480]) torch.float32
 #(2, 3, 480, 480) float32
-images=np.array([b"/workspace/demos/images/merlion.png",b"/workspace/demos/images/merlion.png"])
+images=np.array([b"/workspace/demos/images/merlion.png"]*1)
 model_url = "/workspace/pretrained/model_base_vqa_capfilt_large.pth"
 
 model = blip_vqa_visual_encoder(pretrained=model_url, vit="base")

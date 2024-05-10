@@ -4,8 +4,11 @@ import numpy as np
 import tritonclient.http as httpclient
 from tritonclient.utils import *
 
+batch_size=3
+
 with httpclient.InferenceServerClient("localhost:8000") as client:
-    input0_data = np.load("/workspace/pretrained/questions_states.npy")
+    
+    input0_data = np.repeat(np.load("/workspace/pretrained/questions_states.npy"),batch_size,axis=0)
 
     inputs = [
         httpclient.InferInput(
