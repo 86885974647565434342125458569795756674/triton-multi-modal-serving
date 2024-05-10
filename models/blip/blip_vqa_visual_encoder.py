@@ -1,6 +1,8 @@
 from models.blip.med import BertConfig, BertModel, BertLMHeadModel
 from models.blip.blip import create_vit, init_tokenizer, load_checkpoint
-
+from PIL import Image
+from torchvision import transforms
+from torchvision.transforms.functional import InterpolationMode
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -26,18 +28,30 @@ class BLIP_VQA_VISUAL_ENCODER(nn.Module):
         """
         super().__init__()
 
+        self.image_size=image_size
         self.visual_encoder, vision_width = create_vit(
             vit, image_size, vit_grad_ckpt, vit_ckpt_layer, drop_path_rate=0.1
         )
 
-    def forward(self, images):
+    def forward(self, image_urls):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print("batch size:", images.shape[0])
+        print("batch size:", image_urls.shape)
 
         # Visual Encoder
         start = time.time()
+        transform = transforms.Compose([
+            transforms.Resize(
+                (self.image_size, self.image_size),interpolation=InterpolationMode.BICUBIC,
+            ),
+            transforms.ToTensor(),
+            transforms.Normalize(
+                (0.48145466, 0.4578275, 0.40821073),                            
+                (0.26862954, 0.26130258, 0.27577711),
+            ),
+        ])
 
-        images = torch.from_numpy(images).to(device)
+        images = [transform(Image.open(image_url.decode()).convert("RGB")) for image_url in image_urls]
+        images = torch.stack(images).to(device)
         images_embeds = self.visual_encoder(images)
         images_embeds = images_embeds.numpy(force=True)#to(cpu)
 
