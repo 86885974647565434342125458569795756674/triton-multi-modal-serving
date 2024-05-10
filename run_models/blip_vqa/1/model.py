@@ -29,6 +29,7 @@ class TritonPythonModel:
 
         # You must parse model_config. JSON string is not parsed here
         self.model_config = json.loads(args["model_config"])
+        print(self.model_config)
 
         # Instantiate the PyTorch model
         model_url = "/workspace/pretrained/model_base_vqa_capfilt_large.pth"
@@ -61,6 +62,7 @@ class TritonPythonModel:
           be the same as `requests`
         """
 
+        print(self.model_config)
         responses = []
 
         # Every Python backend must iterate over everyone of the requests
