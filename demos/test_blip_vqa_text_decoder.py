@@ -4,10 +4,8 @@ import numpy as np
 import tritonclient.http as httpclient
 from tritonclient.utils import *
 
-batch_size = 1
-
 with httpclient.InferenceServerClient("localhost:8000") as client:
-    input0_data = np.load("questions_states.npy")
+    input0_data = np.load("/workspace/pretrained/questions_states.npy")
 
     inputs = [
         httpclient.InferInput(

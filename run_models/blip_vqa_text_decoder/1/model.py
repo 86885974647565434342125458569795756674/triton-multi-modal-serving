@@ -4,7 +4,7 @@ from torch.profiler import profile, record_function, ProfilerActivity
 
 import triton_python_backend_utils as pb_utils
 
-from models.blip import blip_vqa_text_decoder
+from models.blip.blip_vqa_text_decoder import blip_vqa_text_decoder
 
 
 class TritonPythonModel:

@@ -1,11 +1,13 @@
-import sys
-
 import numpy as np
+from PIL import Image
+import torch
+from torchvision import transforms
+from torchvision.transforms.functional import InterpolationMode
 import tritonclient.http as httpclient
 from tritonclient.utils import *
 
 model_name = "blip_vqa_visual_encoder"
-batch_size = 1
+batch_size = 10
 
 def load_example_image(image_size):
     raw_image = Image.open("/workspace/demos/images/merlion.png").convert("RGB")

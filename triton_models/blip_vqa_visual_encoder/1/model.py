@@ -4,7 +4,7 @@ from torch.profiler import profile, record_function, ProfilerActivity
 
 import triton_python_backend_utils as pb_utils
 
-from models.blip import blip_vqa_visual_encoder
+from models.blip.blip_vqa_visual_encoder import blip_vqa_visual_encoder
 
 class TritonPythonModel:
     """Your Python model must use the same class name. Every Python model
