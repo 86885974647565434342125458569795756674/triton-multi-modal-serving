@@ -5,12 +5,14 @@ import threading
 import time
 import numpy as np
 from PIL import Image
+import ast
 import torch
+import json
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 import tritonclient.http as httpclient
 from tritonclient.utils import *
-from code.start_blip_vqa_tasks import blip_vqa_visual_encoder_task,blip_vqa_text_encoder_task,blip_vqa_text_decoder_task
+from start_blip_vqa_tasks import blip_vqa_visual_encoder_task,blip_vqa_text_encoder_task,blip_vqa_text_decoder_task
 
 # Define a queue to store incoming POST requests
 request_queue = queue.Queue()
@@ -38,8 +40,16 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
+        post_data = self.rfile.read(content_length).decode('utf-8')
+        post_data = json.loads(post_data)
         request_id=time.time()
+        # print(post_data)
+        # Extract data from the received bytes
+        images = post_data.get('images')
+        texts = post_data.get('texts')
+
+        images=np.array([image.encode('utf-8') for image in images])
+        texts=np.array([text.encode('utf-8') for text in texts])
 
         # Create an event for this request
         request_event = threading.Event()
@@ -47,7 +57,7 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
             request_events[request_id] = request_event
 
         # Put the request in the queue
-        request_queue.put((request_id, post_data))
+        request_queue.put((request_id,images,texts))
 
         # Wait for the result to be available
         request_event.wait()
@@ -91,7 +101,8 @@ def blip_vqa_process_queue(batch_size_queue):
         if not request_queue.empty():
             request_ids, batch_nums,images, texts=[],[],[],[]
             while not request_queue.empty():
-                (request_id,image,text) = request_queue.get()
+                post_data = request_queue.get()
+                request_id,image,text=post_data[0],post_data[1],post_data[2]
                 request_ids.append(request_id)
                 images.append(image)
                 texts.append(text)
@@ -99,33 +110,43 @@ def blip_vqa_process_queue(batch_size_queue):
             
             # cache remove image replication
              
-            images=np.concatenate(images, axis=0)
-            num_blip_vqa_visual_encoder_batch=images.shape[0]//blip_vqa_visual_encoder_batch_size
-            num_blip_vqa_visual_encoder_left=images.shape[0]-num_blip_vqa_visual_encoder_batch*blip_vqa_visual_encoder_batch_size
-            if num_blip_vqa_visual_encoder_left!=0:
-                num_blip_vqa_visual_encoder_batch+=1
-                blip_vqa_visual_encoder_batches=np.split(images[:-num_blip_vqa_visual_encoder_left],blip_vqa_visual_encoder_batch_size)+[images[-num_blip_vqa_visual_encoder_left:]]
+            if images.shape[0]<=blip_vqa_visual_encoder_batch_size:
+                blip_vqa_visual_encoder_batches=[images]
+                num_blip_vqa_visual_encoder_batch=1
             else:
-                blip_vqa_visual_encoder_batches=np.split(images,blip_vqa_visual_encoder_batch_size)
+                num_blip_vqa_visual_encoder_batch=images.shape[0]//blip_vqa_visual_encoder_batch_size
+                num_blip_vqa_visual_encoder_left=images.shape[0]-num_blip_vqa_visual_encoder_batch*blip_vqa_visual_encoder_batch_size
+                if num_blip_vqa_visual_encoder_left!=0:
+                    blip_vqa_visual_encoder_batches=np.split(images[:-num_blip_vqa_visual_encoder_left],num_blip_vqa_visual_encoder_batch)+[images[-num_blip_vqa_visual_encoder_left:]]
+                    num_blip_vqa_visual_encoder_batch+=1
+                else:
+                    blip_vqa_visual_encoder_batches=np.split(images,num_blip_vqa_visual_encoder_batch)
+
+            if texts.shape[0]<=blip_vqa_text_encoder_batch_size:
+                blip_vqa_text_encoder_batches=[texts]
+                num_blip_vqa_text_encoder_batch=1
+            else:
+                num_blip_vqa_text_encoder_batch=texts.shape[0]//blip_vqa_text_encoder_batch_size
+                num_blip_vqa_text_encoder_left=texts.shape[0]-num_blip_vqa_text_encoder_batch*blip_vqa_text_encoder_batch_size
+                if num_blip_vqa_text_encoder_left!=0:
+                    blip_vqa_text_encoder_batches=np.split(texts[:-num_blip_vqa_text_encoder_left],num_blip_vqa_text_encoder_batch)+[texts[-num_blip_vqa_text_encoder_left:]]
+                    num_blip_vqa_text_encoder_batch+=1
+                else:
+                    blip_vqa_text_encoder_batches=np.split(texts,num_blip_vqa_text_encoder_batch)
             
-            texts=np.concatenate(texts, axis=0)
-            num_blip_vqa_text_encoder_batch=texts.shape[0]//blip_vqa_text_encoder_batch_size
-            num_blip_vqa_text_encoder_left=texts.shape[0]-num_blip_vqa_text_encoder_batch*blip_vqa_text_encoder_batch_size
-            if num_blip_vqa_text_encoder_left!=0:
-                num_blip_vqa_text_encoder_batch+=1
-                blip_vqa_text_encoder_batches=np.split(texts[:-num_blip_vqa_text_encoder_left],blip_vqa_text_encoder_batch_size)+[images[-num_blip_vqa_text_encoder_left:]]
+            if texts.shape[0]<=blip_vqa_text_decoder_batch_size:
+                blip_vqa_text_decoder_batches=[texts]
+                num_blip_vqa_text_decoder_batch=1
             else:
-                blip_vqa_text_encoder_batches=np.split(texts,blip_vqa_text_encoder_batch_size)
+                num_blip_vqa_text_decoder_batch=texts.shape[0]//blip_vqa_text_decoder_batch_size
+                num_blip_vqa_text_decoder_left=texts.shape[0]-num_blip_vqa_text_decoder_batch*blip_vqa_text_decoder_batch_size
+                if num_blip_vqa_text_decoder_left!=0:
+                    blip_vqa_text_decoder_batches=np.split(texts[:-num_blip_vqa_text_decoder_left],num_blip_vqa_text_decoder_batch)+[texts[-num_blip_vqa_text_decoder_left:]]
+                    num_blip_vqa_text_decoder_batch+=1
+                else:
+                    blip_vqa_text_decoder_batches=np.split(texts,num_blip_vqa_text_decoder_batch)
 
-            num_blip_vqa_text_decoder_batch=texts.shape[0]//blip_vqa_text_decoder_batch_size
-            num_blip_vqa_text_decoder_left=texts.shape[0]-num_blip_vqa_text_decoder_batch*blip_vqa_text_decoder_batch_size
-            if num_blip_vqa_text_decoder_left!=0:
-                num_blip_vqa_text_decoder_batch+=1
-                blip_vqa_text_decoder_batches=np.split(texts[:-num_blip_vqa_text_decoder_left],blip_vqa_text_decoder_batch_size)+[images[-num_blip_vqa_text_decoder_left:]]
-            else:
-                blip_vqa_text_decoder_batches=np.split(texts,blip_vqa_text_decoder_batch_size)
-
-            blip_vqa_visual_encoder_batches_queue.put(blip_vqa_visual_encoder_batches,block=False)
+            blip_vqa_visual_encoder_batches_queue.put(blip_vqa_visual_encoder_batches,block=False)            
             blip_vqa_text_encoder_batches_queue.put(blip_vqa_text_encoder_batches,block=False)
             blip_vqa_text_decoder_batches_queue.put(blip_vqa_text_decoder_batches,block=False)
 
@@ -137,17 +158,16 @@ def blip_vqa_process_queue(batch_size_queue):
                     now_left=blip_vqa_text_decoder_batches_return
                 else:
                     now_left=np.concatenate([now_left,blip_vqa_text_decoder_batches_return],axis=0)
-                if now_left.shape[0]>=batch_nums[batch_count]:
+                while batch_count<len(batch_nums) and now_left.shape[0]>=batch_nums[batch_count]:
                     post_return=blip_vqa_text_decoder_batches_return[:batch_nums[batch_count]]
                     now_left=now_left[batch_nums[batch_count]:]
-                else:
-                    continue
-                with processed_results_lock:
+                    with processed_results_lock:
                         processed_results[request_ids[batch_count]] = post_return
-                with request_events_lock:
-                    request_event = request_events.get(request_ids[batch_count])
-                request_event.set()
-                batch_count+=1
+                    with request_events_lock:
+                        request_event = request_events.get(request_ids[batch_count])
+                    request_event.set()
+                    batch_count+=1
+            
     
     blip_vqa_visual_encoder_batches_queue.put(None,block=False)
     blip_vqa_visual_encoder_task_thread.join()
