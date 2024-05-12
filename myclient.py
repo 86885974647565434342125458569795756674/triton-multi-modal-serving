@@ -4,7 +4,7 @@ import numpy as np
 import json
 
 def send_post_request(images,texts):
-    url = 'http://localhost:8000'  # Update with your server's address
+    url = 'http://localhost:8971'  # Update with your server's address
 
     # Create a dictionary to hold the data
     data = {'images': images, 'texts': texts}

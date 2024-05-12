@@ -8,6 +8,7 @@ from PIL import Image
 import ast
 import torch
 import json
+import random
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 import tritonclient.http as httpclient
@@ -66,9 +67,13 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
         with processed_results_lock:
             result = processed_results.get(request_id, b"Post data not available")
 
+        result=[text.decode('utf-8') for text in result]
+
+        result_str = "\n".join(result)  # Convert the list to a string with each element on a new line
+        result_bytes = result_str.encode('utf-8') 
         # Send the result back to the client
         self._set_headers()
-        self.wfile.write(result)
+        self.wfile.write(result_bytes)
 
 # Define a function to process the queue
 def blip_vqa_process_queue(batch_size_queue):
@@ -76,16 +81,16 @@ def blip_vqa_process_queue(batch_size_queue):
     blip_vqa_text_encoder_blip_vqa_text_decoder_queue=queue.Queue()
 
     blip_vqa_visual_encoder_batches_queue=queue.Queue()
-    blip_vqa_visual_encoder_task_thread=threading.Thread(target=blip_vqa_visual_encoder_task,args=(blip_vqa_visual_encoder_batches_queue,blip_vqa_visual_encoder_blip_vqa_text_encoder_queue))
+    blip_vqa_visual_encoder_task_thread=threading.Thread(target=blip_vqa_visual_encoder_task,args=(blip_vqa_visual_encoder_batches_queue,blip_vqa_visual_encoder_blip_vqa_text_encoder_queue,))
     blip_vqa_visual_encoder_task_thread.start()
 
     blip_vqa_text_encoder_batches_queue=queue.Queue()
-    blip_vqa_text_encoder_task_thread=threading.Thread(target=blip_vqa_text_encoder_task,args=(blip_vqa_text_encoder_batches_queue,blip_vqa_visual_encoder_blip_vqa_text_encoder_queue,blip_vqa_text_encoder_blip_vqa_text_decoder_queue))
+    blip_vqa_text_encoder_task_thread=threading.Thread(target=blip_vqa_text_encoder_task,args=(blip_vqa_text_encoder_batches_queue,blip_vqa_visual_encoder_blip_vqa_text_encoder_queue,blip_vqa_text_encoder_blip_vqa_text_decoder_queue,))
     blip_vqa_text_encoder_task_thread.start()
 
     blip_vqa_text_decoder_batches_queue=queue.Queue()
     blip_vqa_text_decoder_batches_return_queue=queue.Queue()
-    blip_vqa_text_decoder_task_thread=threading.Thread(target=blip_vqa_text_decoder_task,args=(blip_vqa_text_decoder_batches_queue,blip_vqa_text_encoder_blip_vqa_text_decoder_queue,blip_vqa_text_decoder_batches_return_queue))
+    blip_vqa_text_decoder_task_thread=threading.Thread(target=blip_vqa_text_decoder_task,args=(blip_vqa_text_decoder_batches_queue,blip_vqa_text_encoder_blip_vqa_text_decoder_queue,blip_vqa_text_decoder_batches_return_queue,))
     blip_vqa_text_decoder_task_thread.start()
 
     blip_vqa_visual_encoder_batch_size,blip_vqa_text_encoder_batch_size,blip_vqa_text_decoder_batch_size=1,1,1
@@ -108,6 +113,9 @@ def blip_vqa_process_queue(batch_size_queue):
                 texts.append(text)
                 batch_nums.append(image.shape[0])
             
+            images=np.concatenate(images, axis=0)
+            texts=np.concatenate(texts, axis=0)
+
             # cache remove image replication
              
             if images.shape[0]<=blip_vqa_visual_encoder_batch_size:
@@ -159,8 +167,9 @@ def blip_vqa_process_queue(batch_size_queue):
                 else:
                     now_left=np.concatenate([now_left,blip_vqa_text_decoder_batches_return],axis=0)
                 while batch_count<len(batch_nums) and now_left.shape[0]>=batch_nums[batch_count]:
-                    post_return=blip_vqa_text_decoder_batches_return[:batch_nums[batch_count]]
+                    post_return=now_left[:batch_nums[batch_count]]
                     now_left=now_left[batch_nums[batch_count]:]
+                    # print(post_return,batch_nums[batch_count],batch_count)
                     with processed_results_lock:
                         processed_results[request_ids[batch_count]] = post_return
                     with request_events_lock:
@@ -178,15 +187,30 @@ def blip_vqa_process_queue(batch_size_queue):
     blip_vqa_text_decoder_batches_queue.put(None,block=False)
     blip_vqa_text_decoder_task_thread.join()
 
+def chang_batch_size(batch_size_queue):
+    while True:
+        try:
+            # Attempt to access the first item in the queue
+            first_item = batch_size_queue.queue[0]
+            if first_item is None:
+                break
+        except IndexError:
+            pass
+        time.sleep(15)
+        a,b,c=random.randint(1, 10),random.randint(1, 10),random.randint(1, 10)
+        print(f"batch size:{a},{b},{c}")
+        batch_size_queue.put((a,b,c),block=False)
 
 if __name__=="__main__":
     batch_size_queue=queue.Queue()
     batch_size_queue.put((3,3,3),block=False)
-    blip_vqa_process_thread = threading.Thread(target=blip_vqa_process_queue,args=(batch_size_queue))
+    change_batch_size_thread = threading.Thread(target=chang_batch_size,args=(batch_size_queue,))
+    change_batch_size_thread.start()
+    blip_vqa_process_thread = threading.Thread(target=blip_vqa_process_queue,args=(batch_size_queue,))
     blip_vqa_process_thread.start()
 
-    with socketserver.TCPServer(("", 8000), RequestHandler) as httpd:
-        print("Server started at port 8000")
+    with socketserver.TCPServer(("", 8971), RequestHandler) as httpd:
+        print("Server started at port 8971")
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
@@ -194,4 +218,6 @@ if __name__=="__main__":
             httpd.shutdown()
 
     batch_size_queue.put(None,block=False)
+    batch_size_queue.put(None,block=False)
+    change_batch_size_thread.join()
     blip_vqa_process_thread.join()
