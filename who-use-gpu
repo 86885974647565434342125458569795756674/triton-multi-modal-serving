@@ -1,0 +1,8 @@
+#!/bin/bash
+pid=$1
+cat /proc/$pid/cmdline | grep -a "containerd-shim"
+while [ $? -ne 0 ]; do
+	pid=$(cat /proc/$pid/status | grep PP | grep -o '[0-9]\+')
+	cat /proc/$pid/cmdline | grep -a "containerd-shim" > /dev/null
+done
+docker ps --no-trunc | grep $(cat "/proc/$pid/cmdline" | grep -a "containerd-shim" | tr -d '\0' | awk -F '-id|-' '{print $6}')

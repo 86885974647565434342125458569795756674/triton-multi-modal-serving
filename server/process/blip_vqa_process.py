@@ -9,6 +9,7 @@ import time
 import multiprocessing
 import queue
 import random
+import os
 
 def while_client(model_name,input_queue,output_queue):
     try:
@@ -159,6 +160,10 @@ def change_batch_size(batch_size_queue,time_interval):
         pass
 
 def blip_vqa_process_queue(request_queue,request_events,processed_results,batch_size_queue):
+    # write_file="/workspace/blip_vqa_process_queue.txt"
+    # if(os.path.isfile(write_file)):    
+    #     os.remove(write_file)
+
     try:
         blip_vqa_visual_encoder_blip_vqa_text_encoder_queue=multiprocessing.Queue()
         blip_vqa_text_encoder_blip_vqa_text_decoder_queue=multiprocessing.Queue()
@@ -186,7 +191,7 @@ def blip_vqa_process_queue(request_queue,request_events,processed_results,batch_
             try:
                 batch_sizes=batch_size_queue.get(block=False)
                 blip_vqa_visual_encoder_batch_size,blip_vqa_text_encoder_batch_size,blip_vqa_text_decoder_batch_size=batch_sizes[0],batch_sizes[1],batch_sizes[2]
-                print(f"batch sizes: {batch_sizes}")
+                print(f"update batch sizes: {batch_sizes}")
             except queue.Empty:
                 pass
             if not request_queue.empty():
@@ -198,6 +203,7 @@ def blip_vqa_process_queue(request_queue,request_events,processed_results,batch_
                     images.append(image)
                     texts.append(text)
                     batch_nums.append(image.shape[0])
+                print(f"request num: {len(request_ids)}")
                 
                 images=np.concatenate(images, axis=0)
                 texts=np.concatenate(texts, axis=0)
@@ -255,9 +261,9 @@ def blip_vqa_process_queue(request_queue,request_events,processed_results,batch_
                     while batch_count<len(batch_nums) and now_left.shape[0]>=batch_nums[batch_count]:
                         post_return=now_left[:batch_nums[batch_count]]
                         now_left=now_left[batch_nums[batch_count]:]
-                        print(post_return,batch_nums[batch_count],batch_count)
                         processed_results[request_ids[batch_count]] = post_return
                         request_events[request_ids[batch_count]]=1
+                        print(f"one request finish, batch size: {batch_nums[batch_count]}, request id: {batch_count}")
                         batch_count+=1    
     except KeyboardInterrupt:
         for process in processes:

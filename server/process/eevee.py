@@ -10,13 +10,14 @@ from blip_vqa_process import change_batch_size,blip_vqa_process_queue
 
 def send_and_receive(request_queue,request_events,processed_results):
     write_file="/workspace/send_and_receive.txt"
+    if(os.path.isfile(write_file)):    
+        os.remove(write_file)
     try:
-        while True:
+        for _ in range(3):
             request_num=random.randint(1, 10)
             batch_size_list=[random.randint(1,10) for _ in range(request_num)]
 
-            if(os.path.isfile(write_file)):    
-                os.remove(write_file)
+            
             with open(write_file,"a") as f:
                 f.write(f"request_num: {request_num}\n")
                 f.write(str(batch_size_list)+"\n")
@@ -40,10 +41,11 @@ def send_and_receive(request_queue,request_events,processed_results):
                     del processed_results[request_count]
                     results.append(result)
                     request_count+=1
-                    
+
             with open(write_file,"a") as f:
                 for i in results:
                     f.write(str(i)+"\n")
+        print("--------------------------------------------------------------------------")
     except KeyboardInterrupt:
         pass
 
