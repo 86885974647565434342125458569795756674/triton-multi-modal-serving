@@ -64,6 +64,7 @@ def http_server(request_queue,request_events,processed_results):
 if __name__ == "__main__":
     try:
         batch_size_queue=multiprocessing.Queue()
+        # queue is not the fastest way, maybe pipe
         time_interval=1
         
         request_queue=multiprocessing.Queue()
