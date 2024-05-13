@@ -16,7 +16,7 @@ def send_post_request(images,texts):
 if __name__ == '__main__':
     # Define the data to be sent in each POST request
     request_num=1
-    batch_size=4
+    batch_size=20
     post_data = [
         (["/workspace/demos/images/merlion.png"]*batch_size,["where is the woman sitting?"]*batch_size),
     ]*request_num

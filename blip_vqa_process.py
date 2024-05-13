@@ -153,7 +153,7 @@ def change_batch_size(batch_size_queue,time_interval):
         while True:
             a,b,c=random.randint(1, 10),random.randint(1, 10),random.randint(1, 10)
             batch_size_queue.put((a,b,c),block=False)
-            print(f"release batch size: {a},{b},{c}")
+            # print(f"release batch size: {a},{b},{c}")
             time.sleep(time_interval)
     except KeyboardInterrupt:
         pass
@@ -186,6 +186,7 @@ def blip_vqa_process_queue(request_queue,request_events,processed_results,batch_
             try:
                 batch_sizes=batch_size_queue.get(block=False)
                 blip_vqa_visual_encoder_batch_size,blip_vqa_text_encoder_batch_size,blip_vqa_text_decoder_batch_size=batch_sizes[0],batch_sizes[1],batch_sizes[2]
+                print(f"batch sizes: {batch_sizes}")
             except queue.Empty:
                 pass
             if not request_queue.empty():
@@ -254,16 +255,67 @@ def blip_vqa_process_queue(request_queue,request_events,processed_results,batch_
                     while batch_count<len(batch_nums) and now_left.shape[0]>=batch_nums[batch_count]:
                         post_return=now_left[:batch_nums[batch_count]]
                         now_left=now_left[batch_nums[batch_count]:]
-                        # print(post_return,batch_nums[batch_count],batch_count)
+                        print(post_return,batch_nums[batch_count],batch_count)
                         processed_results[request_ids[batch_count]] = post_return
-                        request_event = request_events.get(request_ids[batch_count])
-                        request_event.set()
+                        request_events[request_ids[batch_count]]=1
                         batch_count+=1    
     except KeyboardInterrupt:
         for process in processes:
             process.join()
 
 if __name__=="__main__":
+
+    try:
+        batch_size_queue=multiprocessing.Queue()
+        time_interval=1
+        
+        request_queue=multiprocessing.Queue()
+        manager = multiprocessing.Manager()
+        request_events=manager.dict()
+        processed_results = manager.dict()
+
+        # Create a list to hold process objects
+        processes = []
+
+        change_batch_size_process = multiprocessing.Process(target=change_batch_size, args=(batch_size_queue,time_interval))
+        processes.append(change_batch_size_process)
+        change_batch_size_process.start()
+
+        blip_vqa_process_queue_process = multiprocessing.Process(target=blip_vqa_process_queue, args=(request_queue,request_events,processed_results,batch_size_queue,))
+        processes.append(blip_vqa_process_queue_process)
+        blip_vqa_process_queue_process.start()
+
+        batch_size=20
+        images = [
+            "/workspace/demos/images/merlion.png"
+        ]*batch_size
+        texts = [
+            "where is the woman sitting?"
+        ]*batch_size
+        images=np.array([image.encode('utf-8') for image in images])
+        texts=np.array([text.encode('utf-8') for text in texts])
+        request_id=time.time()
+
+        # Put the request in the queue
+        request_queue.put((request_id,images,texts))
+
+        request_events[request_id]=0
+
+        while request_events[request_id]==0:
+            pass
+
+        del request_events[request_id]
+
+        result = processed_results.get(request_id, b"Post data not available")
+        
+        
+        for process in processes:
+            process.join()
+    except KeyboardInterrupt:
+        for process in processes:
+            process.join()
+
+    exit(0)
 
     blip_vqa_visual_encoder_blip_vqa_text_encoder_queue=multiprocessing.Queue()
     blip_vqa_text_encoder_blip_vqa_text_decoder_queue=multiprocessing.Queue()
@@ -281,7 +333,7 @@ if __name__=="__main__":
     blip_vqa_text_decoder_task_process=multiprocessing.Process(target=blip_vqa_text_decoder_task,args=(blip_vqa_text_decoder_batches_queue,blip_vqa_text_encoder_blip_vqa_text_decoder_queue,blip_vqa_text_decoder_batches_return_queue))
     blip_vqa_text_decoder_task_process.start()
 
-    blip_vqa_visual_encoder_batch_size,blip_vqa_text_encoder_batch_size,blip_vqa_text_decoder_batch_size=15,15,15
+    blip_vqa_visual_encoder_batch_size,blip_vqa_text_encoder_batch_size,blip_vqa_text_decoder_batch_size=2,8,16
     print(blip_vqa_visual_encoder_batch_size,blip_vqa_text_encoder_batch_size,blip_vqa_text_decoder_batch_size)
 
     batch_size=15
@@ -324,34 +376,38 @@ if __name__=="__main__":
         else:
             blip_vqa_text_decoder_batches=np.split(texts,num_blip_vqa_text_decoder_batch)
 
-    '''
-    print(len(images))
-    print(len(texts))
-    print(len(blip_vqa_visual_encoder_batches))
-    for i in blip_vqa_visual_encoder_batches:
-        print(len(i))
-    print(len(blip_vqa_text_encoder_batches))
-    for i in blip_vqa_text_encoder_batches:
-        print(len(i))
-    print(len(blip_vqa_text_decoder_batches))
-    for i in blip_vqa_text_decoder_batches:
-        print(len(i))
-    '''
+
+    # print(f"len(images): {len(images)}")
+    # print(f"len(texts): {len(texts)}")
+    # print(len(blip_vqa_visual_encoder_batches))
+    # for i in blip_vqa_visual_encoder_batches:
+    #     print(len(i))
+    # print(len(blip_vqa_text_encoder_batches))
+    # for i in blip_vqa_text_encoder_batches:
+    #     print(len(i))
+    # print(len(blip_vqa_text_decoder_batches))
+    # for i in blip_vqa_text_decoder_batches:
+    #     print(len(i))
+    # exit(0)
 
     blip_vqa_visual_encoder_batches_queue.put(blip_vqa_visual_encoder_batches,block=False)
 
     # for _ in range(num_blip_vqa_visual_encoder_batch):
     #     blip_vqa_visual_encoder_batches_return=blip_vqa_visual_encoder_blip_vqa_text_encoder_queue.get()
     #     print(blip_vqa_visual_encoder_batches_return.shape)
+    # print("finish...")
     # blip_vqa_visual_encoder_task_process.join()
+    # exit(0)
     
     blip_vqa_text_encoder_batches_queue.put(blip_vqa_text_encoder_batches,block=False)
     
     # for _ in range(num_blip_vqa_text_encoder_batch):
     #     blip_vqa_text_encoder_batches_return=blip_vqa_text_encoder_blip_vqa_text_decoder_queue.get()
     #     print(blip_vqa_text_encoder_batches_return.shape)
+    # print("finish...")
     # blip_vqa_visual_encoder_task_process.join()
     # blip_vqa_text_encoder_task_process.join()
+    # exit(0)
 
     blip_vqa_text_decoder_batches_queue.put(blip_vqa_text_decoder_batches,block=False)
 
@@ -360,7 +416,7 @@ if __name__=="__main__":
     for _ in range(num_blip_vqa_text_decoder_batch):
         blip_vqa_text_decoder_batches_return=blip_vqa_text_decoder_batches_return_queue.get()
         print(blip_vqa_text_decoder_batches_return.shape)
-        # print(blip_vqa_text_decoder_batches_return)
+    print("finish...")
 
     blip_vqa_visual_encoder_task_process.join()
     blip_vqa_text_encoder_task_process.join()

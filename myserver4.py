@@ -34,13 +34,10 @@ def http_server(request_queue,request_events,processed_results):
             # Put the request in the queue
             request_queue.put((request_id,images,texts))
 
-            # Create an event for this request
-            request_event = multiprocessing.Event()
+            request_events[request_id]=0
 
-            request_events[request_id] = request_event
-
-            # Wait for the result to be available
-            request_event.wait()
+            while request_events[request_id]==0:
+                pass
 
             del request_events[request_id]
 
@@ -67,11 +64,11 @@ def http_server(request_queue,request_events,processed_results):
 if __name__ == "__main__":
     try:
         batch_size_queue=multiprocessing.Queue()
-        time_interval=15
+        time_interval=1
         
         request_queue=multiprocessing.Queue()
         manager = multiprocessing.Manager()
-        request_events = manager.dict()
+        request_events=manager.dict()
         processed_results = manager.dict()
 
         # Create a list to hold process objects
@@ -81,13 +78,13 @@ if __name__ == "__main__":
         processes.append(change_batch_size_process)
         change_batch_size_process.start()
 
-        http_server_process = multiprocessing.Process(target=http_server, args=(request_queue,request_events,processed_results,))
-        processes.append(http_server_process)
-        http_server_process.start()
-
         blip_vqa_process_queue_process = multiprocessing.Process(target=blip_vqa_process_queue, args=(request_queue,request_events,processed_results,batch_size_queue,))
         processes.append(blip_vqa_process_queue_process)
         blip_vqa_process_queue_process.start()
+        
+        http_server_process = multiprocessing.Process(target=http_server, args=(request_queue,request_events,processed_results,))
+        processes.append(http_server_process)
+        http_server_process.start()
         
         for process in processes:
             process.join()
