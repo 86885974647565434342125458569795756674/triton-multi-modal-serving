@@ -35,7 +35,8 @@ class BLIP_VQA_TEXT_DECODER(nn.Module):
         decoder_config = BertConfig.from_json_file(med_config)
         self.text_decoder = BertLMHeadModel(config=decoder_config)
 
-    def forward(self, questions_states):
+    def forward(self, questions_states,questions_atts):
+    #def forward(self, questions_states):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         batch_size = questions_states.shape[0]
         print("batch size:", batch_size)
@@ -44,12 +45,24 @@ class BLIP_VQA_TEXT_DECODER(nn.Module):
         start = time.time()
 
         num_beams = 1
+
         questions_states = torch.from_numpy(
-            questions_states.reshape(batch_size * num_beams, -1, 768)
+             questions_states.reshape(batch_size * num_beams, -1, 768)
         ).to(device)
+        print(questions_states.shape)
+        #questions_states = torch.from_numpy(questions_states).to(device)
+
+        '''
         questions_atts = torch.ones(questions_states.size()[:-1], dtype=torch.long).to(
-            device
+             device
         )
+        print(questions_atts.shape)
+        '''
+        #self.long() is equivalent to self.to(torch.int64)
+        
+        questions_atts = torch.from_numpy(questions_atts).to(device)
+        print(questions_atts.shape)
+
         model_kwargs = {
             "encoder_hidden_states": questions_states,
             "encoder_attention_mask": questions_atts,

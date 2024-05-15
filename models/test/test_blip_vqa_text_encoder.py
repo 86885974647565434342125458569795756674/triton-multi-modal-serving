@@ -26,7 +26,8 @@ questions = np.array(
 model_url = "/workspace/pretrained/model_base_vqa_capfilt_large.pth"
 
 model = blip_vqa_text_encoder(pretrained=model_url, vit="base")
-# model = torch.load("blip_vqa.pt")
+
+
 model.eval()
 model = model.to(device)
 
