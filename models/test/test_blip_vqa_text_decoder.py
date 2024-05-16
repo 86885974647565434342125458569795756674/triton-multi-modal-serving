@@ -21,6 +21,7 @@ model_url = "/workspace/pretrained/model_base_vqa_capfilt_large.pth"
 
 model = blip_vqa_text_decoder(pretrained=model_url, vit="base")
 model.eval()
+print(sum(p.numel() for p in model.parameters()))
 model = model.to(device)
 
 with torch.no_grad():

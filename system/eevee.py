@@ -15,20 +15,22 @@ def send_and_receive(request_queue,request_events,processed_results):
             os.remove(write_file)
         for _ in range(3):
             request_num=random.randint(1, 10)
-            batch_size_list=[random.randint(1,5)*2 for _ in range(request_num)]
+            request_num=8
+            batch_size_list=[random.randint(1,6) for _ in range(request_num)]
+            batch_size_list=[1, 4, 6, 2, 5, 1, 3, 5]
             
             with open(write_file,"a") as f:
                 f.write(f"request_num: {request_num}\n")
                 f.write(str(batch_size_list)+"\n")
 
             images_batches = [
-                np.array([b"/workspace/demos/images/merlion.png",b"/workspace/demos/images/beach.jpg"]*(batch_size//2)) for batch_size in batch_size_list
+                np.array([b"/workspace/demos/images/acorns_1.jpg",b"/workspace/demos/images/acorns_6.jpg",b"/workspace/demos/images/beach.jpg",b"/workspace/demos/images/ex0_0.jpg",b"/workspace/demos/images/ex0_1.jpg",b"/workspace/demos/images/merlion.png"][:batch_size]) for batch_size in batch_size_list
             ]
             texts_batches = [
-                np.array([b"where is it?",b"where is the woman sitting?"]*(batch_size//2)) for batch_size in batch_size_list
+                np.array([b"describe the picture detailly",b"tell me the detail of the photo",b"describe the dog detailly and beautifully",b"tell me the relationship of the dog and human",b"tell me everything about this dog",b"please describe the landscape detailly and gracefully"][:batch_size]) for batch_size in batch_size_list
             ]
             livings_batches = [
-                np.array([random.randint(1, 10),random.randint(1, 10)]*(batch_size//2)) for batch_size in batch_size_list
+                np.array([1000]*batch_size) for batch_size in batch_size_list
             ]
             
             request_ids, batch_nums,images,texts,livings=[],[],[],[],[]
@@ -40,16 +42,27 @@ def send_and_receive(request_queue,request_events,processed_results):
                 livings.append(living_batch)
                 batch_nums.append(image_batch.shape[0])        
             
+            start_time=time.time()
             request_queue.put((request_ids,batch_nums,images,texts,livings))
 
             results=[]
+            end_times=[]
             request_count=0
             while request_count<request_num:
                 result = processed_results.get(request_count,None)
                 if result is not None:
+                    end_times.append(time.time())
                     del processed_results[request_count]
                     results.append(result)
                     request_count+=1
+
+            for e in end_times:
+                print(e-start_time)
+            print(f"avg time: {sum(end_times)/len(end_times)-start_time}")
+            
+            print()
+            # for r in results:
+            #     print(r)
 
             with open(write_file,"a") as f:
                 for i in results:
@@ -57,7 +70,6 @@ def send_and_receive(request_queue,request_events,processed_results):
         print("--------------------------------------------------------------------------")
     except KeyboardInterrupt:
         pass
-
 
 if __name__ == "__main__":
     try:

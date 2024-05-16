@@ -43,6 +43,7 @@ model_url = "/workspace/pretrained/model_base_vqa_capfilt_large.pth"
 model = blip_vqa_visual_encoder(pretrained=model_url, vit="base")
 
 model.eval()
+print(sum(p.numel() for p in model.parameters()))
 model = model.to(device)
 
 images_embeds = model(images)

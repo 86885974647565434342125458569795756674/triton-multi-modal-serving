@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import time
 import multiprocessing
 from blip_vqa_process import while_client
 
@@ -15,19 +16,21 @@ if __name__ == "__main__":
 
         for _ in range(3):
             request_num=random.randint(1, 10)
-            batch_size_list=[random.randint(1,5)*2 for _ in range(request_num)]
+            request_num=8
+            batch_size_list=[random.randint(1,6) for _ in range(request_num)]
+            batch_size_list=[1, 4, 6, 2, 5, 1, 3, 5]
             print(f"request_num: {request_num}")
             print(batch_size_list)
 
 
             images_batches = [
-                np.array([b"/workspace/demos/images/merlion.png",b"/workspace/demos/images/beach.jpg"]*(batch_size//2)) for batch_size in batch_size_list
+                np.array([b"/workspace/demos/images/acorns_1.jpg",b"/workspace/demos/images/acorns_6.jpg",b"/workspace/demos/images/beach.jpg",b"/workspace/demos/images/ex0_0.jpg",b"/workspace/demos/images/ex0_1.jpg",b"/workspace/demos/images/merlion.png"][:batch_size]) for batch_size in batch_size_list
             ]
             texts_batches = [
-                np.array([b"where is it?",b"where is the woman sitting?"]*(batch_size//2)) for batch_size in batch_size_list
+                np.array([b"describe the picture detailly",b"tell me the detail of the photo",b"describe the dog detailly and beautifully",b"tell me the relationship of the dog and human",b"tell me everything about this dog",b"please describe the landscape detailly and gracefully"][:batch_size]) for batch_size in batch_size_list
             ]
             livings_batches = [
-                np.array([random.randint(1, 10),random.randint(1, 10)]*(batch_size//2)) for batch_size in batch_size_list
+                np.array([1000]*batch_size) for batch_size in batch_size_list
             ]
 
             request_ids, batch_nums,images,texts,livings=[],[],[],[],[]
@@ -38,17 +41,21 @@ if __name__ == "__main__":
                 texts.append(text_batch)
                 livings.append(living_batch)
                 batch_nums.append(image_batch.shape[0])        
-
+            
+            
+            start_time=time.time()
+            
             images=np.concatenate(images, axis=0)
             texts=np.concatenate(texts, axis=0)
-
+            
             input_queue.put((images,texts))
 
-            results=[]
-            request_count=0
-
             result = output_queue.get()
-            print(result)
+            end_time=time.time()
+            print(f"total time: {end_time-start_time}")
+            # print(images_batches)
+            # print(texts_batches)
+            # print(result)
         print("--------------------------------------------------------------------------")
         for process in processes:
             process.join()

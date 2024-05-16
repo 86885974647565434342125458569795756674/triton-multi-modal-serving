@@ -39,10 +39,12 @@ class BLIP_VQA_TEXT_ENCODER(nn.Module):
     def forward(self, images_embeds, questions):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         batch_size = questions.size
-        print("batch size:", batch_size)
+        #print("batch size:", batch_size)
 
         # Text Encoder
-        start = time.time()
+        start = torch.cuda.Event(enable_timing=True)
+        end=torch.cuda.Event(enable_timing=True)
+        start.record()
 
         images_embeds = torch.from_numpy(images_embeds).to(device)
         images_atts = torch.ones(images_embeds.size()[:-1], dtype=torch.long).to(device)
@@ -68,9 +70,10 @@ class BLIP_VQA_TEXT_ENCODER(nn.Module):
             .reshape(batch_size, num_beams, -1, 768)
         )
 
-        end = time.time()
+        end.record()
+        torch.cuda.synchronize()
 
-        print("text_encoder time:", end - start)
+        print("text_encoder time:", start.elapsed_time(end)/1000)
 
         return questions_states
 

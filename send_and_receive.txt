@@ -1,41 +1,30 @@
-request_num: 10
-[2, 8, 10, 4, 2, 6, 10, 2, 10, 4]
-[b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach' b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach']
-[b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
-[b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach']
-request_num: 6
-[2, 6, 4, 10, 10, 10]
-[b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
-request_num: 5
-[6, 6, 8, 6, 8]
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach' b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach' b'singapore' b'on beach']
+request_num: 8
+[1, 4, 6, 2, 5, 1, 3, 5]
+[b'no']
+[b'no' b'grass' b'tan' b'no']
+[b'no' b'grass' b'tan' b'no' b'it is brown' b'yes']
+[b'no' b'grass']
+[b'no' b'grass' b'tan' b'no' b'it is brown']
+[b'no']
+[b'no' b'grass' b'tan']
+[b'no' b'grass' b'tan' b'no' b'it is brown']
+request_num: 8
+[1, 4, 6, 2, 5, 1, 3, 5]
+[b'no']
+[b'no' b'grass' b'tan' b'no']
+[b'no' b'grass' b'tan' b'no' b'it is brown' b'yes']
+[b'no' b'grass']
+[b'no' b'grass' b'tan' b'no' b'it is brown']
+[b'no']
+[b'no' b'grass' b'tan']
+[b'no' b'grass' b'tan' b'no' b'it is brown']
+request_num: 8
+[1, 4, 6, 2, 5, 1, 3, 5]
+[b'no']
+[b'no' b'grass' b'tan' b'no']
+[b'no' b'grass' b'tan' b'no' b'it is brown' b'yes']
+[b'no' b'grass']
+[b'no' b'grass' b'tan' b'no' b'it is brown']
+[b'no']
+[b'no' b'grass' b'tan']
+[b'no' b'grass' b'tan' b'no' b'it is brown']

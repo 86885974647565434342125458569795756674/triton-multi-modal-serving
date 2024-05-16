@@ -319,12 +319,14 @@ def blip_vqa_process(request_queue,request_events,processed_results,batch_size_q
             try:
                 batch_sizes=batch_size_queue.get(block=False)
                 blip_vqa_visual_encoder_batch_size,blip_vqa_text_encoder_batch_size,blip_vqa_text_decoder_batch_size=batch_sizes[0],batch_sizes[1],batch_sizes[2]
-                print(f"update batch sizes: {batch_sizes}")
+                # print(f"update batch sizes: {batch_sizes}")
+                blip_vqa_visual_encoder_batch_size,blip_vqa_text_encoder_batch_size,blip_vqa_text_decoder_batch_size=8,8,8
+                ######################
             except queue.Empty:
                 pass
             if not request_queue.empty():
                 request_ids,batch_nums,images,texts,livings=request_queue.get()
-                print(f"request num: {len(request_ids)}")
+                # print(f"request num: {len(request_ids)}")
 
                 images=np.concatenate(images, axis=0)
                 texts=np.concatenate(texts, axis=0)
@@ -357,7 +359,7 @@ def blip_vqa_process(request_queue,request_events,processed_results,batch_size_q
                         now_left=now_left[batch_nums[batch_count]:]
                         processed_results[request_ids[batch_count]] = post_return
                         request_events[request_ids[batch_count]]=1
-                        print(f"one request finish, batch size: {batch_nums[batch_count]}, request id: {batch_count}")
+                        # print(f"one request finish, batch size: {batch_nums[batch_count]}, request id: {batch_count}")
                         batch_count+=1      
     except KeyboardInterrupt:
         for process in processes:

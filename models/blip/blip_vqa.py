@@ -61,23 +61,24 @@ class BLIP_VQA(nn.Module):
                 (0.26862954, 0.26130258, 0.27577711),
             ),
         ])
-        image_urls = [image_url.decode() for image_url in image_urls]
+        image_urls = [image_url.decode("utf-8") for image_url in image_urls]
         images = []
         for image_url in image_urls:
             images.append(transform(Image.open(image_url).convert("RGB")))
         images = torch.stack(images)
         image_batch_size = images.size(0)
-        torch.cuda.synchronize()
         end = time.time()
         image_preprocessor_time = end - start
 
         # Visual Encoder
-        start = time.time()
+        gpu_start=torch.cuda.Event(enable_timing=True)
+        gpu_end=torch.cuda.Event(enable_timing=True)
+        gpu_start.record()
         images = images.to(device)
         images_embeds = self.visual_encoder(images)
+        gpu_end.record()
         torch.cuda.synchronize()
-        end = time.time()
-        image_encoder_time = end - start
+        image_encoder_time = gpu_start.elapsed_time(gpu_end)/1000
 
 
         # Text Tokenizer
@@ -91,12 +92,11 @@ class BLIP_VQA(nn.Module):
             return_tensors="pt",
         )
         questions.input_ids[:, 0] = self.tokenizer.enc_token_id
-        torch.cuda.synchronize()
         end = time.time()
         text_tokenizer_time = end - start
 
         # Text Encoder
-        start = time.time()
+        gpu_start.record()
         images_atts = torch.ones(images_embeds.size()[:-1],
                                  dtype=torch.long).to(device)
         questions = questions.to(device)
@@ -110,12 +110,12 @@ class BLIP_VQA(nn.Module):
         num_beams = 1
         questions_states = questions_output.last_hidden_state.repeat_interleave(
             num_beams, dim=0)
+        gpu_end.record()
         torch.cuda.synchronize()
-        end = time.time()
-        text_encoder_time = end - start
+        text_encoder_time = gpu_start.elapsed_time(gpu_end)/1000
 
         # Text Decoder
-        start = time.time()
+        gpu_start.record()
         questions_atts = torch.ones(questions_states.size()[:-1],
                                     dtype=torch.long).to(device)
         model_kwargs = {
@@ -141,9 +141,10 @@ class BLIP_VQA(nn.Module):
             self.tokenizer.decode(output, skip_special_tokens=True).encode()
             for output in outputs
         ]
+        gpu_end.record()
         torch.cuda.synchronize()
-        end = time.time()
-        text_decoder_time = end - start
+        text_decoder_time = gpu_start.elapsed_time(gpu_end)/1000
+        
         print(f"[image batch size: {image_batch_size}]")
         print("image preprocessor time: ", image_preprocessor_time)
         print("image encoder time: ", image_encoder_time)

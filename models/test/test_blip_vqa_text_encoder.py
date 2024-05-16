@@ -29,6 +29,7 @@ model = blip_vqa_text_encoder(pretrained=model_url, vit="base")
 
 
 model.eval()
+print(sum(p.numel() for p in model.parameters()))
 model = model.to(device)
 
 
