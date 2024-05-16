@@ -6,32 +6,37 @@ import json
 import random
 import multiprocessing
 import os
-from blip_vqa_process import change_batch_size,blip_vqa_process_queue
+from blip_vqa_process import change_batch_size,blip_vqa_process
 
 def send_and_receive(request_queue,request_events,processed_results):
-    write_file="/workspace/send_and_receive.txt"
-    if(os.path.isfile(write_file)):    
-        os.remove(write_file)
     try:
+        write_file="/workspace/send_and_receive.txt"
+        if(os.path.isfile(write_file)):    
+            os.remove(write_file)
         for _ in range(3):
             request_num=random.randint(1, 10)
-            batch_size_list=[random.randint(1,10) for _ in range(request_num)]
-
+            batch_size_list=[random.randint(1,5)*2 for _ in range(request_num)]
             
             with open(write_file,"a") as f:
                 f.write(f"request_num: {request_num}\n")
                 f.write(str(batch_size_list)+"\n")
 
-            images = [
-                np.array([b"/workspace/demos/images/merlion.png"]*batch_size) for batch_size in batch_size_list
+            images_batches = [
+                np.array([b"/workspace/demos/images/merlion.png",b"/workspace/demos/images/beach.jpg"]*(batch_size//2)) for batch_size in batch_size_list
             ]
-            texts = [
-                np.array([b"where is the woman sitting?"]*batch_size) for batch_size in batch_size_list
+            texts_batches = [
+                np.array([b"where is it?",b"where is the woman sitting?"]*(batch_size//2)) for batch_size in batch_size_list
             ]
-
+            
+            request_ids, batch_nums,images,texts=[],[],[],[]
             for i in range(request_num):
-                # Put the request in the queue
-                request_queue.put((i,images[i],texts[i]))
+                request_id,image_batch,text_batch=i,images_batches[i],texts_batches[i]
+                request_ids.append(request_id)
+                images.append(image_batch)
+                texts.append(text_batch)
+                batch_nums.append(image_batch.shape[0])        
+            
+            request_queue.put((request_ids,batch_nums,images,texts))
 
             results=[]
             request_count=0
@@ -68,9 +73,9 @@ if __name__ == "__main__":
         processes.append(change_batch_size_process)
         change_batch_size_process.start()
 
-        blip_vqa_process_queue_process = multiprocessing.Process(target=blip_vqa_process_queue, args=(request_queue,request_events,processed_results,batch_size_queue,))
-        processes.append(blip_vqa_process_queue_process)
-        blip_vqa_process_queue_process.start()
+        blip_vqa_process_process = multiprocessing.Process(target=blip_vqa_process, args=(request_queue,request_events,processed_results,batch_size_queue,))
+        processes.append(blip_vqa_process_process)
+        blip_vqa_process_process.start()
         
         send_and_receive_process = multiprocessing.Process(target=send_and_receive, args=(request_queue,request_events,processed_results,))
         processes.append(send_and_receive_process)
@@ -81,4 +86,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         for process in processes:
             process.join()
-
+        print("finish...")

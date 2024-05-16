@@ -69,14 +69,14 @@ def recover_once(images:np,unique_images:np,cached_images_result:np):
     return recover_images_from_duplication
 
 def recover_cache_duplication(images:np,unique_images:np,cached_images_result:np,no_forward_indices:np,unique_images_after_forward:np,forward_indices:np,recover_images_from_duplication:np,mask:np):
-    print("forward_indices")
-    print(forward_indices)
-    print("no_forward_indices")
-    print(no_forward_indices)
-    print("unique_images_after_forward")
-    print(unique_images_after_forward.shape)
-    print("cached_images_result")
-    print(cached_images_result.shape)
+    # print("forward_indices")
+    # print(forward_indices)
+    # print("no_forward_indices")
+    # print(no_forward_indices)
+    # print("unique_images_after_forward")
+    # print(unique_images_after_forward.shape)
+    # print("cached_images_result")
+    # print(cached_images_result.shape)
 
     # recover from cache    
     if unique_images_after_forward.shape[0]!=0:
