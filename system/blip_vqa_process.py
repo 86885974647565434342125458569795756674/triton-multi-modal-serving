@@ -64,27 +64,31 @@ def blip_vqa_visual_encoder_task(input_queue,output_queue):
         cache_process.start()
 
         while True:
-            images,blip_vqa_visual_encoder_batch_size=input_queue.get()
-            cache_get_input_queue.put(images,block=False)
-            unique_images,cached_images_result,no_forward_indices,unique_images_forward,forward_indices=cache_get_output_queue.get()
+            images,blip_vqa_visual_encoder_batch_size,livings=input_queue.get()
+            cache_get_input_queue.put((images,livings),block=False)
+            unique_images,cached_images_result,no_forward_indices,unique_images_forward,forward_indices,livings_forward=cache_get_output_queue.get()
             
             if unique_images_forward.shape[0]==0:
                 blip_vqa_visual_encoder_batches=[]                    
                 forward_indices_batches=[]
+                livings_batches=[]
                 num_blip_vqa_visual_encoder_batch=0
             elif unique_images_forward.shape[0]<=blip_vqa_visual_encoder_batch_size:
-                blip_vqa_visual_encoder_batches=[unique_images_forward]                    
+                blip_vqa_visual_encoder_batches=[unique_images_forward]               
                 forward_indices_batches=[forward_indices]
+                livings_batches=[livings_forward]     
                 num_blip_vqa_visual_encoder_batch=1
             else:
                 num_blip_vqa_visual_encoder_batch=unique_images_forward.shape[0]//blip_vqa_visual_encoder_batch_size
                 num_blip_vqa_visual_encoder_left=unique_images_forward.shape[0]-num_blip_vqa_visual_encoder_batch*blip_vqa_visual_encoder_batch_size
                 if num_blip_vqa_visual_encoder_left!=0:
                     blip_vqa_visual_encoder_batches=np.split(unique_images_forward[:-num_blip_vqa_visual_encoder_left],num_blip_vqa_visual_encoder_batch)+[unique_images_forward[-num_blip_vqa_visual_encoder_left:]]
+                    livings_batches=np.split(livings_forward[:-num_blip_vqa_visual_encoder_left],num_blip_vqa_visual_encoder_batch)+[livings_forward[-num_blip_vqa_visual_encoder_left:]]
                     forward_indices_batches=np.split(forward_indices[:-num_blip_vqa_visual_encoder_left],num_blip_vqa_visual_encoder_batch)+[forward_indices[-num_blip_vqa_visual_encoder_left:]]
                     num_blip_vqa_visual_encoder_batch+=1
                 else:
                     blip_vqa_visual_encoder_batches=np.split(unique_images_forward,num_blip_vqa_visual_encoder_batch)
+                    livings_batches=np.split(livings_forward,num_blip_vqa_visual_encoder_batch)
                     forward_indices_batches=np.split(forward_indices,num_blip_vqa_visual_encoder_batch)
 
             if len(blip_vqa_visual_encoder_batches)==0:
@@ -100,15 +104,13 @@ def blip_vqa_visual_encoder_task(input_queue,output_queue):
             mask=None
             no_forward_indices_indice_start=0
             start_to_send_indice=0
+
             for i,images_per_batch in enumerate(blip_vqa_visual_encoder_batches):
+
                 output_per_batch=blip_vqa_visual_encoder_output_queue.get()
-                # print("images_per_batch")
-                # print(images_per_batch)
-                # print("output_per_batch")
-                # print(output_per_batch.shape)
-                
+
                 # add cache
-                cache_put_queue.put((images_per_batch,output_per_batch),block=False)
+                cache_put_queue.put((images_per_batch,output_per_batch,livings_batches[i]),block=False)
                 
                 # print("np.all((no_forward_indices>forward_indices_batches[i][-1])==False)")
                 # print(np.all((no_forward_indices>forward_indices_batches[i][-1])==False))
@@ -321,13 +323,14 @@ def blip_vqa_process(request_queue,request_events,processed_results,batch_size_q
             except queue.Empty:
                 pass
             if not request_queue.empty():
-                request_ids,batch_nums,images,texts=request_queue.get()
+                request_ids,batch_nums,images,texts,livings=request_queue.get()
                 print(f"request num: {len(request_ids)}")
 
                 images=np.concatenate(images, axis=0)
                 texts=np.concatenate(texts, axis=0)
+                livings=np.concatenate(livings, axis=0)
 
-                blip_vqa_visual_encoder_batches_queue.put((images,blip_vqa_visual_encoder_batch_size),block=False)            
+                blip_vqa_visual_encoder_batches_queue.put((images,blip_vqa_visual_encoder_batch_size,livings),block=False)            
 
                 blip_vqa_text_encoder_batches_queue.put((texts,blip_vqa_text_encoder_batch_size),block=False)
 
@@ -363,73 +366,64 @@ def blip_vqa_process(request_queue,request_events,processed_results,batch_size_q
 if __name__=="__main__":
 
     try:
+
         # Create a list to hold process objects
         processes = []
 
-        cache_get_input_queue=multiprocessing.Queue()
-        cache_get_output_queue=multiprocessing.Queue()
-        cache_put_queue=multiprocessing.Queue()
-        cache_process=multiprocessing.Process(target=cache_get_put,args=(cache_get_input_queue,cache_get_output_queue,cache_put_queue,))
-        processes.append(cache_process)
-        cache_process.start()
+        batch_size_queue=multiprocessing.Queue()
+        # queue is not the fastest way, maybe pipe
+        time_interval=1
+
+        change_batch_size_process = multiprocessing.Process(target=change_batch_size, args=(batch_size_queue,time_interval))
+        processes.append(change_batch_size_process)
+        change_batch_size_process.start()
 
         blip_vqa_visual_encoder_blip_vqa_text_encoder_queue=multiprocessing.Queue()
         blip_vqa_text_encoder_blip_vqa_text_decoder_queue=multiprocessing.Queue()
 
         blip_vqa_visual_encoder_batches_queue=multiprocessing.Queue()
-        blip_vqa_visual_encoder_task_process=multiprocessing.Process(target=blip_vqa_visual_encoder_task,args=(blip_vqa_visual_encoder_batches_queue,blip_vqa_visual_encoder_blip_vqa_text_encoder_queue,cache_put_queue))
+        blip_vqa_visual_encoder_task_process=multiprocessing.Process(target=blip_vqa_visual_encoder_task,args=(blip_vqa_visual_encoder_batches_queue,blip_vqa_visual_encoder_blip_vqa_text_encoder_queue,))
         processes.append(blip_vqa_visual_encoder_task_process)
         blip_vqa_visual_encoder_task_process.start()
 
-        blip_vqa_visual_encoder_batch_size,blip_vqa_text_encoder_batch_size,blip_vqa_text_decoder_batch_size=2,2,2
+        blip_vqa_visual_encoder_batch_size,blip_vqa_text_encoder_batch_size,blip_vqa_text_decoder_batch_size=1,1,1
 
-        for _ in range(2):
-            batch_size=5*2
-            images = [
-                "/workspace/demos/images/merlion.png","/workspace/demos/images/beach.jpg"
-            ]*(batch_size//2)
-            texts = [
-                "where is it?","where is the woman sitting?"
-            ]*(batch_size//2)
-            images=np.array([image.encode('utf-8') for image in images])
-            texts=np.array([text.encode('utf-8') for text in texts])
+        for _ in range(3):
+            request_num=random.randint(1, 10)
+            request_num=1
+            batch_size_list=[random.randint(1,5)*2 for _ in range(request_num)]
+            batch_size_list=[10]
+            images_batches = [
+                np.array([b"/workspace/demos/images/merlion.png",b"/workspace/demos/images/beach.jpg"]*(batch_size//2)) for batch_size in batch_size_list
+            ]
+            texts_batches = [
+                np.array([b"where is it?",b"where is the woman sitting?"]*(batch_size//2)) for batch_size in batch_size_list
+            ]
+            livings_batches = [
+                np.array([random.randint(1, 10),random.randint(1, 10)]*(batch_size//2)) for batch_size in batch_size_list
+            ]
 
-            cache_get_input_queue.put(images,block=False)
-            unique_images,cached_images_result,no_forward_indices,unique_images_forward,forward_indices=cache_get_output_queue.get() 
-            
-            if unique_images_forward.shape[0]==0:
-                blip_vqa_visual_encoder_batches=[]                    
-                forward_indices_batches=[]
-                num_blip_vqa_visual_encoder_batch=0
-            elif unique_images_forward.shape[0]<=blip_vqa_visual_encoder_batch_size:
-                blip_vqa_visual_encoder_batches=[unique_images_forward]                    
-                forward_indices_batches=[forward_indices]
-                num_blip_vqa_visual_encoder_batch=1
-            else:
-                num_blip_vqa_visual_encoder_batch=unique_images_forward.shape[0]//blip_vqa_visual_encoder_batch_size
-                num_blip_vqa_visual_encoder_left=unique_images_forward.shape[0]-num_blip_vqa_visual_encoder_batch*blip_vqa_visual_encoder_batch_size
-                if num_blip_vqa_visual_encoder_left!=0:
-                    blip_vqa_visual_encoder_batches=np.split(unique_images_forward[:-num_blip_vqa_visual_encoder_left],num_blip_vqa_visual_encoder_batch)+[unique_images_forward[-num_blip_vqa_visual_encoder_left:]]
-                    forward_indices_batches=np.split(forward_indices[:-num_blip_vqa_visual_encoder_left],num_blip_vqa_visual_encoder_batch)+[forward_indices[-num_blip_vqa_visual_encoder_left:]]
-                    num_blip_vqa_visual_encoder_batch+=1
-                else:
-                    blip_vqa_visual_encoder_batches=np.split(unique_images_forward,num_blip_vqa_visual_encoder_batch)
-                    forward_indices_batches=np.split(forward_indices,num_blip_vqa_visual_encoder_batch)
-                
-            print("images")
-            print(images)
-            print("unique_images")
-            print(unique_images)
-            print("cached_images_result")
-            print(cached_images_result.shape)
-            print("no_forward_indices")
-            print(no_forward_indices)
-            print("blip_vqa_visual_encoder_batches")
-            print(blip_vqa_visual_encoder_batches)
-            print("forward_indices_batches")
-            print(forward_indices_batches)
+            request_ids, batch_nums,images,texts,livings=[],[],[],[],[]
+            for i in range(request_num):
+                request_id,image_batch,text_batch,living_batch=i,images_batches[i],texts_batches[i],livings_batches[i]
+                request_ids.append(request_id)
+                images.append(image_batch)
+                texts.append(text_batch)
+                livings.append(living_batch)
+                batch_nums.append(image_batch.shape[0])        
 
-            blip_vqa_visual_encoder_batches_queue.put((images,unique_images,cached_images_result,no_forward_indices,blip_vqa_visual_encoder_batches,forward_indices_batches),block=False)            
+            try:
+                batch_sizes=batch_size_queue.get(block=False)
+                blip_vqa_visual_encoder_batch_size,blip_vqa_text_encoder_batch_size,blip_vqa_text_decoder_batch_size=batch_sizes[0],batch_sizes[1],batch_sizes[2]
+                print(f"update batch sizes: {batch_sizes}")
+            except queue.Empty:
+                pass
+
+            images=np.concatenate(images, axis=0)
+            texts=np.concatenate(texts, axis=0)
+            livings=np.concatenate(livings, axis=0)
+
+            blip_vqa_visual_encoder_batches_queue.put((images,livings,blip_vqa_visual_encoder_batch_size),block=False)            
 
             has_output_num=0
             while True:

@@ -1,30 +1,41 @@
-request_num: 2
-[10, 10]
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
-request_num: 6
-[10, 2, 10, 10, 4, 6]
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
-[b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
- b'on beach']
-request_num: 7
-[2, 8, 2, 6, 10, 4, 2]
+request_num: 10
+[2, 8, 10, 4, 2, 6, 10, 2, 10, 4]
 [b'singapore' b'on beach']
 [b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
  b'on beach' b'singapore' b'on beach']
+[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
+ b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
+[b'singapore' b'on beach' b'singapore' b'on beach']
 [b'singapore' b'on beach']
 [b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
  b'on beach']
 [b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
  b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
-[b'singapore' b'on beach' b'singapore' b'on beach']
 [b'singapore' b'on beach']
+[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
+ b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
+[b'singapore' b'on beach' b'singapore' b'on beach']
+request_num: 6
+[2, 6, 4, 10, 10, 10]
+[b'singapore' b'on beach']
+[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
+ b'on beach']
+[b'singapore' b'on beach' b'singapore' b'on beach']
+[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
+ b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
+[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
+ b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
+[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
+ b'on beach' b'singapore' b'on beach' b'singapore' b'on beach']
+request_num: 5
+[6, 6, 8, 6, 8]
+[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
+ b'on beach']
+[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
+ b'on beach']
+[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
+ b'on beach' b'singapore' b'on beach']
+[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
+ b'on beach']
+[b'singapore' b'on beach' b'singapore' b'on beach' b'singapore'
+ b'on beach' b'singapore' b'on beach']

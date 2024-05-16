@@ -27,16 +27,20 @@ def send_and_receive(request_queue,request_events,processed_results):
             texts_batches = [
                 np.array([b"where is it?",b"where is the woman sitting?"]*(batch_size//2)) for batch_size in batch_size_list
             ]
+            livings_batches = [
+                np.array([random.randint(1, 10),random.randint(1, 10)]*(batch_size//2)) for batch_size in batch_size_list
+            ]
             
-            request_ids, batch_nums,images,texts=[],[],[],[]
+            request_ids, batch_nums,images,texts,livings=[],[],[],[],[]
             for i in range(request_num):
-                request_id,image_batch,text_batch=i,images_batches[i],texts_batches[i]
+                request_id,image_batch,text_batch,living_batch=i,images_batches[i],texts_batches[i],livings_batches[i]
                 request_ids.append(request_id)
                 images.append(image_batch)
                 texts.append(text_batch)
+                livings.append(living_batch)
                 batch_nums.append(image_batch.shape[0])        
             
-            request_queue.put((request_ids,batch_nums,images,texts))
+            request_queue.put((request_ids,batch_nums,images,texts,livings))
 
             results=[]
             request_count=0
@@ -57,22 +61,22 @@ def send_and_receive(request_queue,request_events,processed_results):
 
 if __name__ == "__main__":
     try:
+        # Create a list to hold process objects
+        processes = []
+
         batch_size_queue=multiprocessing.Queue()
         # queue is not the fastest way, maybe pipe
         time_interval=1
-        
-        request_queue=multiprocessing.Queue()
-        manager = multiprocessing.Manager()
-        request_events=manager.dict()
-        processed_results = manager.dict()
-
-        # Create a list to hold process objects
-        processes = []
 
         change_batch_size_process = multiprocessing.Process(target=change_batch_size, args=(batch_size_queue,time_interval))
         processes.append(change_batch_size_process)
         change_batch_size_process.start()
 
+        request_queue=multiprocessing.Queue()
+        manager = multiprocessing.Manager()
+        request_events=manager.dict()
+        processed_results = manager.dict()
+        
         blip_vqa_process_process = multiprocessing.Process(target=blip_vqa_process, args=(request_queue,request_events,processed_results,batch_size_queue,))
         processes.append(blip_vqa_process_process)
         blip_vqa_process_process.start()

@@ -1,38 +1,59 @@
 from collections import OrderedDict
 import numpy as np
 import queue
+import time
 
 class LRUCache:
     def __init__(self, capacity):
         self.capacity = capacity
         self.cache = OrderedDict()
+        self.start_time_cache = OrderedDict()
+        self.living_cache = OrderedDict()
 
     def get(self, key):
         if key in self.cache:
-            # Move the key to the end to mark it as most recently used
-            self.cache.move_to_end(key,last=True)
-            return self.cache[key]
-        else:
-            return None  # Key not found
+            if time.time()-self.start_time_cache[key]<self.living_cache[key]:
+                self.cache.move_to_end(key,last=True)
+                self.start_time_cache[key]=time.time()
+                self.start_time_cache.move_to_end(key,last=True)
+                self.living_cache.move_to_end(key,last=True)
+                return self.cache[key]  
+            # in but timeout   
+            del self.cache[key]
+            del self.start_time_cache[key]
+            del self.living_cache[key]
+        return None
 
-    def put(self, key, value):
-        if key in self.cache:
-            # Update the value and move the key to the end
-            self.cache[key] = value
-            self.cache.move_to_end(key)
-        else:
-            if len(self.cache) >= self.capacity:
-                # Remove the least recently used item
-                self.cache.popitem(last=False)
-            # Add the new key-value pair to the end
-            self.cache[key] = value
+    def put(self, key, value,living=60*60*24*7):
+        if living==-1:
+            # no cache
+            return
+        if key not in self.cache and len(self.cache) >= self.capacity:
+            self.cache.popitem(last=False)
+            self.end_time_cache.popitem(last=False)
 
-def remove_duplication_cache(my_cache,images:np):
+        self.cache[key] = value
+        self.cache.move_to_end(key,last=True)
+        self.start_time_cache[key]=time.time()
+        self.start_time_cache.move_to_end(key,last=True)
+        self.living_cache[key]=living
+        self.living_cache.move_to_end(key,last=True)
+
+
+def remove_duplication_cache(my_cache,images:np,livings:np):
+    # print("remove_duplication_cache")
+    # print("images.shape")
+    # print(images.shape)
+    # print("livings.shape")
+    # print(livings.shape)
     # remove duplication in a batch
     unique_images,return_index = np.unique(images,return_index=True)
     # stable unique, keep the order in images
     sorted_indices = np.argsort(return_index)
     unique_images = unique_images[sorted_indices]
+    livings=livings[sorted_indices]
+    # print("livings.shape")
+    # print(livings.shape)
 
     # np([aabb])->np([ab])
 
@@ -54,11 +75,15 @@ def remove_duplication_cache(my_cache,images:np):
 
     unique_images_forward = unique_images[forward_indices]
 
+    livings_forward = livings[forward_indices]
+    # print("livings.shape")
+    # print(livings.shape)
+
     # np([ab])->np([a']),np([b])
     # unique->cached,forward
     # [012]->[0],[12]
 
-    return unique_images,cached_images_result,np.array(no_forward_indices,dtype=int),unique_images_forward,np.array(forward_indices,dtype=int)
+    return unique_images,cached_images_result,np.array(no_forward_indices,dtype=int),unique_images_forward,np.array(forward_indices,dtype=int),livings_forward
 
 
 def recover_once(images:np,unique_images:np,cached_images_result:np):
@@ -101,14 +126,14 @@ def cache_get_put(cache_get_input_queue,cache_get_output_queue,cache_put_queue,c
         image_cache=LRUCache(capacity)
         while True:
             try:
-                images=cache_get_input_queue.get(block=False)
-                cache_get_output_queue.put(remove_duplication_cache(image_cache,images),block=False)
+                images,livings=cache_get_input_queue.get(block=False)
+                cache_get_output_queue.put(remove_duplication_cache(image_cache,images,livings),block=False)
             except queue.Empty:
                 pass
             try:
-                images_per_batch,output_per_batch=cache_put_queue.get(block=False)
+                images_per_batch,output_per_batch,livings=cache_put_queue.get(block=False)
                 for i,element in enumerate(output_per_batch):
-                    image_cache.put(images_per_batch[i],element)
+                    image_cache.put(images_per_batch[i],element,livings[i])
             except queue.Empty:
                 pass
     except KeyboardInterrupt:
