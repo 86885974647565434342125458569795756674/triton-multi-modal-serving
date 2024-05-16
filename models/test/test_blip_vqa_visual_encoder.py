@@ -50,5 +50,5 @@ images_embeds = model(images)
 #print(images_embeds.shape,images_embeds.dtype)
 #(2, 901, 768) float32
 
-with open("/workspace/pretrained/images_embeds.npy", "wb") as f:
-    np.save(f, images_embeds)
+#with open("/workspace/pretrained/images_embeds.npy", "wb") as f:
+ #   np.save(f, images_embeds)

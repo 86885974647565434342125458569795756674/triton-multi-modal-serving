@@ -2,7 +2,7 @@ import json
 import torch
 import triton_python_backend_utils as pb_utils
 
-from models import blip_vqa
+from models.blip.blip_vqa import blip_vqa
 
 
 class TritonPythonModel:
@@ -29,7 +29,7 @@ class TritonPythonModel:
 
         # You must parse model_config. JSON string is not parsed here
         self.model_config = json.loads(args["model_config"])
-        print(self.model_config)
+        #print(self.model_config)
 
         # Instantiate the PyTorch model
         model_url = "/workspace/pretrained/model_base_vqa_capfilt_large.pth"
@@ -62,31 +62,31 @@ class TritonPythonModel:
           be the same as `requests`
         """
 
-        print(self.model_config)
+       # print(self.model_config)
         responses = []
 
         # Every Python backend must iterate over everyone of the requests
         # and create a pb_utils.InferenceResponse for each of them.
         for request in requests:
-            images = pb_utils.get_input_tensor_by_name(request, "IMAGE")
-            questions = pb_utils.get_input_tensor_by_name(request, "QUESTION")
-            use_modal_level_batch = pb_utils.get_input_tensor_by_name(
-                request, "USE_MODAL_LEVEL_BATCH")
+            images = pb_utils.get_input_tensor_by_name(request, "INPUT0")
+            questions = pb_utils.get_input_tensor_by_name(request, "INPUT1")
+         #   use_modal_level_batch = pb_utils.get_input_tensor_by_name(
+          #  request, "USE_MODAL_LEVEL_BATCH")
 
             with torch.no_grad():
                 answers = self.model(
                     images.as_numpy(),
                     questions.as_numpy(),
-                    enable_modal_level_batch=use_modal_level_batch.as_numpy()
-                    [0],
+                   # enable_modal_level_batch=use_modal_level_batch.as_numpy()
+                   # [0],
                 )
 
             answers_tensor = pb_utils.Tensor(
-                "ANSWER",
+                "OUTPUT0",
                 answers.astype(
                     pb_utils.triton_string_to_numpy(
                         pb_utils.get_output_config_by_name(
-                            self.model_config, "ANSWER")["data_type"])),
+                            self.model_config, "OUTPUT0")["data_type"])),
             )
 
             inference_response = pb_utils.InferenceResponse(

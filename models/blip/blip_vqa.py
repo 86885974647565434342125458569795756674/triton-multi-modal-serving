@@ -1,5 +1,5 @@
-from .med import BertConfig, BertModel, BertLMHeadModel
-from .blip import create_vit, init_tokenizer, load_checkpoint
+from models.blip.med import BertConfig, BertModel, BertLMHeadModel
+from models.blip.blip import create_vit, init_tokenizer, load_checkpoint
 
 from PIL import Image
 from torchvision import transforms
@@ -45,7 +45,7 @@ class BLIP_VQA(nn.Module):
         decoder_config = BertConfig.from_json_file(med_config)
         self.text_decoder = BertLMHeadModel(config=decoder_config)
 
-    def forward(self, image_urls, questions, enable_modal_level_batch=True):
+    def forward(self, image_urls, questions):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Image Preprocesor
@@ -63,16 +63,8 @@ class BLIP_VQA(nn.Module):
         ])
         image_urls = [image_url.decode() for image_url in image_urls]
         images = []
-        if enable_modal_level_batch:
-            last_image_url = ""
-            for image_url in image_urls:
-                if image_url != last_image_url:
-                    last_image_url = image_url
-                    images.append(
-                        transform(Image.open(image_url).convert("RGB")))
-        else:
-            for image_url in image_urls:
-                images.append(transform(Image.open(image_url).convert("RGB")))
+        for image_url in image_urls:
+            images.append(transform(Image.open(image_url).convert("RGB")))
         images = torch.stack(images)
         image_batch_size = images.size(0)
         torch.cuda.synchronize()
@@ -87,22 +79,6 @@ class BLIP_VQA(nn.Module):
         end = time.time()
         image_encoder_time = end - start
 
-        # Image Autoscaler
-        image_autoscaler_time = 0
-        if enable_modal_level_batch:
-            start = time.time()
-            scaled_images_embeds = []
-            last_image_url = ""
-            image_embeds_idx = -1
-            for image_url in image_urls:
-                if image_url != last_image_url:
-                    last_image_url = image_url
-                    image_embeds_idx += 1
-                scaled_images_embeds.append(images_embeds[image_embeds_idx])
-            images_embeds = torch.stack(scaled_images_embeds)
-            torch.cuda.synchronize()
-            end = time.time()
-            image_autoscaler_time = end - start
 
         # Text Tokenizer
         start = time.time()
@@ -171,13 +147,13 @@ class BLIP_VQA(nn.Module):
         print(f"[image batch size: {image_batch_size}]")
         print("image preprocessor time: ", image_preprocessor_time)
         print("image encoder time: ", image_encoder_time)
-        print("image autoscaler time: ", image_autoscaler_time)
         print(f"[question batch size: {question_batch_size}]")
         print("text tokenizer time: ", text_tokenizer_time)
         print("text encoder time: ", text_encoder_time)
         print("text decoder time: ", text_decoder_time)
         print()
 
+        '''
         with open("/workspace/output.txt", "a") as f:
             print(
                 image_preprocessor_time,
@@ -189,7 +165,7 @@ class BLIP_VQA(nn.Module):
                 sep="\t",
                 file=f,
             )
-
+        '''
         return np.array(answers)
 
 

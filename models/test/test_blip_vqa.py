@@ -1,12 +1,12 @@
 import os
 import sys
 
-sys.path.append(os.path.join(os.getcwd()))
 
 import numpy as np
 import torch
 
-from models import blip_vqa
+sys.path.append(os.path.join(os.getcwd()))
+from models.blip.blip_vqa import blip_vqa
 
 image_urls = np.array([
     b"/workspace/demos/images/beach.jpg",
@@ -30,9 +30,7 @@ model.eval()
 model = model.to(device)
 
 with torch.no_grad():
-    answers = model(image_urls, questions, enable_modal_level_batch=True)
-with torch.no_grad():
-    answers = model(image_urls, questions, enable_modal_level_batch=False)
+    answers = model(image_urls, questions)
 print(image_urls)
 print(questions)
 print(answers)

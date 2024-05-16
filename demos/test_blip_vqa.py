@@ -6,7 +6,6 @@ from tritonclient.utils import np_to_triton_dtype
 
 model_name = "blip_vqa"
 loop_size = 1
-USE_MODAL_LEVEL_BATCH = False
 
 with httpclient.InferenceServerClient("localhost:8000") as client:
     images = np.array([
@@ -21,37 +20,24 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
         b"",
         b"which city is this photo taken?",
     ] * loop_size)
-    use_modal_level_batch = np.array([
-        USE_MODAL_LEVEL_BATCH,
-        USE_MODAL_LEVEL_BATCH,
-        USE_MODAL_LEVEL_BATCH,
-        USE_MODAL_LEVEL_BATCH,
-    ] * loop_size)
-
     inputs = [
         httpclient.InferInput(
-            "IMAGE",
+            "INPUT0",
             images.shape,
             np_to_triton_dtype(images.dtype),
         ),
         httpclient.InferInput(
-            "QUESTION",
+            "INPUT1",
             questions.shape,
             np_to_triton_dtype(questions.dtype),
-        ),
-        httpclient.InferInput(
-            "USE_MODAL_LEVEL_BATCH",
-            use_modal_level_batch.shape,
-            np_to_triton_dtype(use_modal_level_batch.dtype),
         ),
     ]
 
     inputs[0].set_data_from_numpy(images)
     inputs[1].set_data_from_numpy(questions)
-    inputs[2].set_data_from_numpy(use_modal_level_batch)
 
     outputs = [
-        httpclient.InferRequestedOutput("ANSWER"),
+        httpclient.InferRequestedOutput("OUTPUT0"),
     ]
 
     response = client.infer(model_name,
@@ -59,9 +45,8 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
                             request_id=str(1),
                             outputs=outputs)
 
-    answers = response.as_numpy("ANSWER")
+    answers = response.as_numpy("OUTPUT0")
 
     print("IMAGE ({}) + QUESTION ({}) = ANSWER ({})".format(
         images, questions, answers))
 
-    sys.exit(0)
