@@ -76,9 +76,10 @@ class TritonPythonModel:
         for request in requests:
             # Get INPUT0
             in_0 = pb_utils.get_input_tensor_by_name(request, "INPUT0")
+            in_1 = pb_utils.get_input_tensor_by_name(request, "INPUT1")
 
             with torch.no_grad():
-                out_0 = self.model(in_0.as_numpy())
+                out_0 = self.model(in_0.as_numpy(),in_1.as_numpy())
             # with profile(
             #     activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
             #     record_shapes=True,

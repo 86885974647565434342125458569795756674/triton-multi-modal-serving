@@ -13,7 +13,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 questions_states = np.load("/workspace/pretrained/questions_states.npy")
 print(questions_states.shape)
 
-questions_atts_shape=(questions_states.shape[0]*questions_states.shape[1],*(questions_states.shape[2:-1]))
+questions_atts_shape=(questions_states.shape[0]*questions_states.shape[1],questions_states.shape[2])
 questions_atts = torch.ones(questions_atts_shape, dtype=torch.long).numpy(force=True)
 print(questions_atts.shape)
 

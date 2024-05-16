@@ -108,6 +108,8 @@ def blip_vqa_visual_encoder_task(blip_vqa_visual_encoder_batches_queue,blip_vqa_
                     inc=0
                     while start_to_send_indice<images.shape[0] and start_to_send_indice+inc<images.shape[0] and np.all(mask[start_to_send_indice:start_to_send_indice+inc+1] == True):
                         inc+=1
+                    print("inc")
+                    print(inc)
                     blip_vqa_visual_encoder_blip_vqa_text_encoder_queue.put(recover_images_from_duplication[start_to_send_indice:start_to_send_indice+inc],block=False)
                     start_to_send_indice+=inc
                 else:
@@ -160,6 +162,21 @@ def blip_vqa_text_encoder_task(blip_vqa_text_encoder_batches_queue,blip_vqa_visu
             process.join()
 
 
+def pad_concate(input0_data,input1_data,input0_data1):
+    input1_data1_shape=(input0_data1.shape[0]*input0_data1.shape[1],input0_data1.shape[2])
+    input1_data1 = torch.ones(input1_data1_shape, dtype=torch.long).numpy(force=True)
+
+    if input0_data.shape[2]>input0_data1.shape[2]:
+        input1_data1=np.pad(input1_data1,((0,0),(input0_data.shape[2]-input0_data1.shape[2],0)),"constant", constant_values=(0, 0))
+        input0_data1=np.pad(input0_data1,((0,0),(0,0),(input0_data.shape[2]-input0_data1.shape[2],0),(0,0)),"constant")
+    elif input0_data.shape[2]<input0_data1.shape[2]:
+        input1_data=np.pad(input1_data,((0,0),(input0_data1.shape[2]-input0_data.shape[2],0)),"constant", constant_values=(0, 0))
+        input0_data=np.pad(input0_data,((0,0),(0,0),(input0_data1.shape[2]-input0_data.shape[2],0),(0,0)),"constant")
+
+    input0_data=np.concatenate([input0_data,input0_data1],axis=0)
+    input1_data=np.concatenate([input1_data,input1_data1],axis=0)
+    return input0_data,input1_data
+
 def blip_vqa_text_decoder_task(blip_vqa_text_decoder_batches_queue,blip_vqa_text_encoder_blip_vqa_text_decoder_queue,blip_vqa_text_decoder_batches_return_queue):
     try:
         blip_vqa_text_decoder_input_queue=multiprocessing.Queue()
@@ -173,26 +190,25 @@ def blip_vqa_text_decoder_task(blip_vqa_text_decoder_batches_queue,blip_vqa_text
             text_batch_num=len(blip_vqa_text_decoder_batches)
             text_batch_input_count=0
             text_batch_output_count=0
-            now_left=None
+            now_left_data,now_left_mask=None,None
             while text_batch_input_count<text_batch_num or text_batch_output_count<text_batch_num:
                 try:
                     texts_per_batch=blip_vqa_text_encoder_blip_vqa_text_decoder_queue.get(block=False)
-                    if now_left is None:
-                        now_left=texts_per_batch
-                    else:
-                        print("now_left")
-                        print(now_left.shape)
-                        print("texts_per_batch")
-                        print(texts_per_batch.shape)
-                        now_left=np.concatenate([now_left,texts_per_batch],axis=0)
+                    if now_left_data is None:
+                        now_left_data=texts_per_batch
+                        now_left_mask_shape=(now_left_data.shape[0]*now_left_data.shape[1],now_left_data.shape[2])
+                        now_left_mask = torch.ones(now_left_mask_shape, dtype=torch.long).numpy(force=True)
+                    else:                        
+                        now_left_data,now_left_mask=pad_concate(now_left_data,now_left_mask,texts_per_batch)
                     # print(text_batch_input_count,now_left.shape[0],blip_vqa_text_decoder_batches[text_batch_input_count].shape[0])
                 except queue.Empty:
                     pass
 
-                while now_left is not None and text_batch_input_count<text_batch_num and now_left.shape[0]>=blip_vqa_text_decoder_batches[text_batch_input_count].shape[0]:
+                while now_left_data is not None and text_batch_input_count<text_batch_num and now_left_data.shape[0]>=blip_vqa_text_decoder_batches[text_batch_input_count].shape[0]:
                     # print(blip_vqa_text_decoder_batches[text_batch_input_count])
-                    blip_vqa_text_decoder_input_queue.put(now_left[:blip_vqa_text_decoder_batches[text_batch_input_count].shape[0]],block=False)
-                    now_left=now_left[blip_vqa_text_decoder_batches[text_batch_input_count].shape[0]:]
+                    blip_vqa_text_decoder_input_queue.put((now_left_data[:blip_vqa_text_decoder_batches[text_batch_input_count].shape[0]],now_left_mask[:blip_vqa_text_decoder_batches[text_batch_input_count].shape[0]]),block=False)
+                    now_left_data=now_left_data[blip_vqa_text_decoder_batches[text_batch_input_count].shape[0]:]
+                    now_left_mask=now_left_mask[blip_vqa_text_decoder_batches[text_batch_input_count].shape[0]:]
                     text_batch_input_count+=1
                 
                 try:
