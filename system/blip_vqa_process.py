@@ -286,7 +286,7 @@ def change_batch_size(batch_size_queue,time_interval):
     except KeyboardInterrupt:
         pass
 
-def blip_vqa_process(request_queue,request_events,processed_results,batch_size_queue):
+def blip_vqa_process(request_queue,request_events,processed_results,batch_size_queue,fix_batch=False):
     try:
         # write_file="/workspace/blip_vqa_process.txt"
         # if(os.path.isfile(write_file)):    
@@ -313,17 +313,18 @@ def blip_vqa_process(request_queue,request_events,processed_results,batch_size_q
         processes.append(blip_vqa_text_decoder_task_process)
         blip_vqa_text_decoder_task_process.start()
 
-        blip_vqa_visual_encoder_batch_size,blip_vqa_text_encoder_batch_size,blip_vqa_text_decoder_batch_size=1,1,1
+        if fix_batch != False:
+            blip_vqa_visual_encoder_batch_size,blip_vqa_text_encoder_batch_size,blip_vqa_text_decoder_batch_size=fix_batch
+            print(f"fix batch sizes: {blip_vqa_visual_encoder_batch_size},{blip_vqa_text_encoder_batch_size},{blip_vqa_text_decoder_batch_size}")
         
         while True:
-            try:
-                batch_sizes=batch_size_queue.get(block=False)
-                blip_vqa_visual_encoder_batch_size,blip_vqa_text_encoder_batch_size,blip_vqa_text_decoder_batch_size=batch_sizes[0],batch_sizes[1],batch_sizes[2]
-                # print(f"update batch sizes: {batch_sizes}")
-                blip_vqa_visual_encoder_batch_size,blip_vqa_text_encoder_batch_size,blip_vqa_text_decoder_batch_size=8,8,8
-                ######################
-            except queue.Empty:
-                pass
+            if fix_batch==False:
+                try:
+                    batch_sizes=batch_size_queue.get(block=False)
+                    blip_vqa_visual_encoder_batch_size,blip_vqa_text_encoder_batch_size,blip_vqa_text_decoder_batch_size=batch_sizes
+                    print(f"update batch sizes: {batch_sizes}")
+                except queue.Empty:
+                    pass
             if not request_queue.empty():
                 request_ids,batch_nums,images,texts,livings=request_queue.get()
                 # print(f"request num: {len(request_ids)}")

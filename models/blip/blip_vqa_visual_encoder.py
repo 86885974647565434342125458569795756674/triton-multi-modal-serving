@@ -38,9 +38,9 @@ class BLIP_VQA_VISUAL_ENCODER(nn.Module):
         #print("batch size:", image_urls.shape)
 
         # Visual Encoder
-        start = torch.cuda.Event(enable_timing=True)
-        end=torch.cuda.Event(enable_timing=True)
-        start.record()
+#        start = torch.cuda.Event(enable_timing=True)
+#        end=torch.cuda.Event(enable_timing=True)
+#        start.record()
         transform = transforms.Compose([
             transforms.Resize(
                 (self.image_size, self.image_size),interpolation=InterpolationMode.BICUBIC,
@@ -57,9 +57,9 @@ class BLIP_VQA_VISUAL_ENCODER(nn.Module):
         images_embeds = self.visual_encoder(images)
         images_embeds = images_embeds.numpy(force=True)#to(cpu)
 
-        end.record()
-        torch.cuda.synchronize()
-        print("visual_encoder time:", start.elapsed_time(end)/1000)
+#        end.record()
+#        torch.cuda.synchronize()
+#        print("visual_encoder time:", start.elapsed_time(end)/1000)
 
         return images_embeds
 
