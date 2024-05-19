@@ -32,8 +32,8 @@ model.eval()
 print(sum(p.numel() for p in model.parameters()))
 model = model.to(device)
 
-
-questions_states = model(images_embeds, questions)
+with torch.no_grad():
+     questions_states = model(images_embeds, questions)
 #print(questions_states.shape,questions_states.dtype)
 #(2, 1, 9, 768) float32
 with open("/workspace/pretrained/questions_states.npy", "wb") as f:

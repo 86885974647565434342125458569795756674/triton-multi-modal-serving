@@ -2,7 +2,7 @@ import json
 import torch
 import triton_python_backend_utils as pb_utils
 
-from models import blip_nlvr
+from models.blip.blip_nlvr import blip_nlvr
 
 # ENABLE_MODAL_LEVEL_BATCH = True
 
@@ -63,7 +63,7 @@ class TritonPythonModel:
 
         output_dtype = pb_utils.triton_string_to_numpy(
             pb_utils.get_output_config_by_name(self.model_config,
-                                               "ANSWER")["data_type"])
+                                               "OUTPUT0")["data_type"])
 
         responses = []
 
@@ -71,11 +71,11 @@ class TritonPythonModel:
         # and create a pb_utils.InferenceResponse for each of them.
         for request in requests:
             # Get INPUT0
-            image0s = pb_utils.get_input_tensor_by_name(request, "IMAGE0")
+            image0s = pb_utils.get_input_tensor_by_name(request, "INPUT0")
             # Get INPUT1
-            image1s = pb_utils.get_input_tensor_by_name(request, "IMAGE1")
+            image1s = pb_utils.get_input_tensor_by_name(request, "INPUT1")
             # Get INPUT2
-            texts = pb_utils.get_input_tensor_by_name(request, "TEXT")
+            texts = pb_utils.get_input_tensor_by_name(request, "INPUT2")
 
             with torch.no_grad():
                 answer = self.model(
@@ -85,7 +85,7 @@ class TritonPythonModel:
                     # enable_modal_level_batch=ENABLE_MODAL_LEVEL_BATCH,
                 )
 
-            answer_tensor = pb_utils.Tensor("ANSWER",
+            answer_tensor = pb_utils.Tensor("OUTPUT0",
                                             answer.astype(output_dtype))
 
             inference_response = pb_utils.InferenceResponse(

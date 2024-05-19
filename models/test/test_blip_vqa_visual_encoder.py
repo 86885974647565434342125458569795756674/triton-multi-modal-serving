@@ -46,7 +46,8 @@ model.eval()
 print(sum(p.numel() for p in model.parameters()))
 model = model.to(device)
 
-images_embeds = model(images)
+with torch.no_grad():
+    images_embeds = model(images)
 
 #print(images_embeds.shape,images_embeds.dtype)
 #(2, 901, 768) float32

@@ -1,30 +1,31 @@
 name: "blip_nlvr"
 backend: "python"
 
+max_batch_size: 0
 input [
   {
-    name: "IMAGE0"
+    name: "INPUT0"
     data_type: TYPE_STRING
     dims: [ -1 ]
   }
 ]
 input [
   {
-    name: "IMAGE1"
+    name: "INPUT1"
     data_type: TYPE_STRING
     dims: [ -1 ]
   }
 ]
 input [
   {
-    name: "TEXT"
+    name: "INPUT2"
     data_type: TYPE_STRING
     dims: [ -1 ]
   }
 ]
 output [
   {
-    name: "ANSWER"
+    name: "OUTPUT0"
     data_type: TYPE_BOOL
     dims: [ -1 ]
   }

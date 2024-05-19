@@ -54,7 +54,7 @@ class BLIP_NLVR(nn.Module):
 
     def forward(self, image0_urls, image1_urls, texts):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+#        start = time.time()
         # Preprocess
         image0_urls = [image0_url.decode() for image0_url in image0_urls]
         image1_urls = [image1_url.decode() for image1_url in image1_urls]
@@ -75,7 +75,12 @@ class BLIP_NLVR(nn.Module):
         for image1_url in image1_urls:
             images.append(transform(Image.open(image1_url).convert("RGB")))
         images = torch.stack(images)
+#        end = time.time()
+#        image_preprocessor_time = end - start
 
+#        gpu_start=torch.cuda.Event(enable_timing=True)
+#        gpu_end=torch.cuda.Event(enable_timing=True)
+#        gpu_start.record()
         # Visual Encoder
         images = images.to(device)
         images_embeds = self.visual_encoder(images)
@@ -83,13 +88,18 @@ class BLIP_NLVR(nn.Module):
                                  dtype=torch.long).to(device)
         image0s_embeds, image1s_embeds = torch.split(images_embeds,
                                                      texts.shape[0])
-
+#        gpu_end.record()
+#        torch.cuda.synchronize()
+#        image_encoder_time = gpu_start.elapsed_time(gpu_end)/1000
+#        start = time.time()
         # Text Encoder
         texts = self.tokenizer([text.decode() for text in texts],
                                padding="longest",
                                return_tensors="pt").to(device)
         texts.input_ids[:, 0] = self.tokenizer.enc_token_id
-
+#        end = time.time()
+#        text_tokenizer_time = end - start
+#        gpu_start.record()
         output = self.text_encoder(
             texts.input_ids,
             attention_mask=texts.attention_mask,
@@ -101,11 +111,40 @@ class BLIP_NLVR(nn.Module):
             return_dict=True,
         )
         hidden_state = output.last_hidden_state[:, 0, :]
-
+#        gpu_end.record()
+#        torch.cuda.synchronize()
+#        text_encoder_time = gpu_start.elapsed_time(gpu_end)/1000
+#        gpu_start.record()
         # Decoder
         prediction = self.cls_head(hidden_state)
         _, prediction_class = prediction.max(1)
+#        gpu_end.record()
+#        torch.cuda.synchronize()
+#        text_decoder_time = gpu_start.elapsed_time(gpu_end)/1000
 
+        '''
+        print(f"[image batch size: {image_batch_size}]")
+        print("image preprocessor time: ", image_preprocessor_time)
+        print("image encoder time: ", image_encoder_time)
+        print(f"[question batch size: {question_batch_size}]")
+        print("text tokenizer time: ", text_tokenizer_time)
+        print("text encoder time: ", text_encoder_time)
+        print("text decoder time: ", text_decoder_time)
+        print()
+        '''
+        '''
+        with open("/workspace/output.txt", "a") as f:
+            print(
+                image_preprocessor_time,
+                image_encoder_time,
+                image_autoscaler_time,
+                text_tokenizer_time,
+                text_encoder_time,
+                text_decoder_time,
+                sep="\t",
+                file=f,
+            )
+        '''
         return prediction_class.cpu().numpy().astype(bool)
 
 
