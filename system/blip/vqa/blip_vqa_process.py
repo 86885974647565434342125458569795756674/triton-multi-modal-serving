@@ -11,40 +11,7 @@ import queue
 import random
 import os
 from cache import cache_get_put,recover_cache_duplication,recover_once
-
-def while_client(model_name,input_queue,output_queue):
-    try:
-        with httpclient.InferenceServerClient("localhost:8000") as client:
-            while True:
-                input_data=input_queue.get()
-                inputs=[]
-                if isinstance(input_data,tuple):
-                    for i in range(len(input_data)):
-                        inputs.append(
-                            httpclient.InferInput(
-                            f"INPUT{i}", input_data[i].shape, np_to_triton_dtype(input_data[i].dtype)
-                            )
-                        )
-                    for i in range(len(inputs)):
-                        inputs[i].set_data_from_numpy(input_data[i])
-                else:
-                    inputs.append(
-                        httpclient.InferInput(
-                        f"INPUT0", input_data.shape, np_to_triton_dtype(input_data.dtype)
-                        )
-                    )
-                    inputs[0].set_data_from_numpy(input_data)
-
-                outputs = [
-                    httpclient.InferRequestedOutput("OUTPUT0"),
-                ]
-
-                response = client.infer(model_name, inputs, request_id=str(1), outputs=outputs)
-
-                output0_data = response.as_numpy("OUTPUT0")
-                output_queue.put(output0_data,block=False)
-    except KeyboardInterrupt:
-        pass
+from utils import while_client
 
 def blip_vqa_visual_encoder_task(input_queue,output_queue):
     try:
