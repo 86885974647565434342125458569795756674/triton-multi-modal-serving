@@ -1,25 +1,19 @@
 import sys
-
+import time
 import numpy as np
 import tritonclient.http as httpclient
 from tritonclient.utils import np_to_triton_dtype
 
 model_name = "blip_vqa"
-loop_size = 1
+batch_size = 32
 
 with httpclient.InferenceServerClient("localhost:8000") as client:
+    start_time=time.time()
+
     images = np.array([
-        b"/workspace/demos/images/beach.jpg",
-        b"/workspace/demos/images/beach.jpg",
-        b"/workspace/demos/images/merlion.png",
-        b"/workspace/demos/images/merlion.png",
-    ] * loop_size)
+        b"/workspace/demos/images/beach.jpg"] * batch_size)
     questions = np.array([
-        b"where is the woman sitting?",
-        b"where is the dog sitting?",
-        b"",
-        b"which city is this photo taken?",
-    ] * loop_size)
+        b"where is the woman sitting?"] * batch_size)
     inputs = [
         httpclient.InferInput(
             "INPUT0",
@@ -47,6 +41,7 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
 
     answers = response.as_numpy("OUTPUT0")
 
+    print(time.time()-start_time)
+    
     print("IMAGE ({}) + QUESTION ({}) = ANSWER ({})".format(
-        images, questions, answers))
-
+        images.shape, questions.shape, answers))
