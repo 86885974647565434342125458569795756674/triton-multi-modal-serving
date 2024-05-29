@@ -3,7 +3,7 @@ import torch
 import triton_python_backend_utils as pb_utils
 
 from models.blip.blip_vqa import blip_vqa
-
+import time
 
 class TritonPythonModel:
     """Your Python model must use the same class name. Every Python model
@@ -39,6 +39,7 @@ class TritonPythonModel:
         self.model.eval()
         self.model = self.model.to(
             "cuda" if torch.cuda.is_available() else "cpu")
+        print(f"time:{time.time()}")
 
     def execute(self, requests):
         """`execute` must be implemented in every Python model. `execute`

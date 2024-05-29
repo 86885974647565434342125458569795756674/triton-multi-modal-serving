@@ -1,7 +1,7 @@
 name: "blip_vqa"
 backend: "python"
 
-max_batch_size: 0
+max_batch_size: 32
 input [
   {
     name: "INPUT0"
