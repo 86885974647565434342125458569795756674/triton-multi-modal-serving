@@ -1,7 +1,11 @@
 name: "blip_vqa_visual_encoder"
 backend: "python"
 
-max_batch_size: 0
+max_batch_size: 128
+
+dynamic_batching {
+    max_queue_delay_microseconds: 100
+}
 
 input [
   {
@@ -14,7 +18,7 @@ output [
   {
     name: "OUTPUT0"
     data_type: TYPE_FP32
-    dims: [-1, -1, -1 ]
+    dims: [ -1, -1, -1 ]
   }
 ]
 

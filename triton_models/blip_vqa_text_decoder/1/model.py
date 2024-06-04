@@ -3,7 +3,7 @@ import torch
 from torch.profiler import profile, record_function, ProfilerActivity
 
 import triton_python_backend_utils as pb_utils
-
+import time
 from models.blip.blip_vqa_text_decoder import blip_vqa_text_decoder
 
 
@@ -67,6 +67,7 @@ class TritonPythonModel:
           be the same as `requests`
         """
 
+        start=time.time()
         output0_dtype = self.output0_dtype
 
         responses = []
@@ -97,6 +98,7 @@ class TritonPythonModel:
             )
             responses.append(inference_response)
 
+        print(start,time.time())
         # You should return a list of pb_utils.InferenceResponse. Length
         # of this list must match the length of `requests` list.
         return responses

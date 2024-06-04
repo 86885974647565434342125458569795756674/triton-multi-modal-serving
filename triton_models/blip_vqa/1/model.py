@@ -1,6 +1,9 @@
 import json
 import torch
 import triton_python_backend_utils as pb_utils
+import sys
+
+root_path='/dynamic_batch/triton-multi-modal-serving'
 
 from models.blip.blip_vqa import blip_vqa
 import time
@@ -30,16 +33,21 @@ class TritonPythonModel:
         # You must parse model_config. JSON string is not parsed here
         self.model_config = json.loads(args["model_config"])
         #print(self.model_config)
+        self.output0_dtype = pb_utils.triton_string_to_numpy(
+            pb_utils.get_output_config_by_name(self.model_config, "OUTPUT0")[
+                "data_type"
+            ]
+        )
 
         # Instantiate the PyTorch model
-        model_url = "/workspace/pretrained/model_base_vqa_capfilt_large.pth"
+        model_url = root_path+"/pretrained/model_base_vqa_capfilt_large.pth"
         # import os
         # config_url = os.getcwd() + "configs/med_config.json"
         self.model = blip_vqa(pretrained=model_url)
         self.model.eval()
         self.model = self.model.to(
             "cuda" if torch.cuda.is_available() else "cpu")
-        print(f"time:{time.time()}")
+        #print(f"time:{time.time()}")
 
     def execute(self, requests):
         """`execute` must be implemented in every Python model. `execute`
@@ -62,7 +70,7 @@ class TritonPythonModel:
           A list of pb_utils.InferenceResponse. The length of this list must
           be the same as `requests`
         """
-
+        #input_comm_time=time.time()
        # print(self.model_config)
         responses = []
 
@@ -84,16 +92,14 @@ class TritonPythonModel:
 
             answers_tensor = pb_utils.Tensor(
                 "OUTPUT0",
-                answers.astype(
-                    pb_utils.triton_string_to_numpy(
-                        pb_utils.get_output_config_by_name(
-                            self.model_config, "OUTPUT0")["data_type"])),
-            )
+                answers.astype(self.output0_dtype))
 
             inference_response = pb_utils.InferenceResponse(
                 output_tensors=[answers_tensor])
             responses.append(inference_response)
 
+
+        #print(input_comm_time,time.time())
         # You should return a list of pb_utils.InferenceResponse. Length
         # of this list must match the length of `requests` list.
         return responses

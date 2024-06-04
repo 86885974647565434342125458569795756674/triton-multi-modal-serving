@@ -52,11 +52,14 @@ class BLIP_VQA_VISUAL_ENCODER(nn.Module):
             ),
         ])
 
-        images = [transform(Image.open(image_url.decode()).convert("RGB")) for image_url in image_urls]
+        #print(image_urls)
+        images = [transform(Image.open(image_url[0].decode()).convert("RGB")) for image_url in image_urls]
         images = torch.stack(images).to(device)
+        #print(images[0].shape,images.shape)
+        #torch.Size([3, 480, 480]) torch.Size([1, 3, 480, 480])
         images_embeds = self.visual_encoder(images)
         images_embeds = images_embeds.numpy(force=True)#to(cpu)
-
+        #print(images_embeds.shape)
 #        end.record()
 #        torch.cuda.synchronize()
 #        print("visual_encoder time:", start.elapsed_time(end)/1000)

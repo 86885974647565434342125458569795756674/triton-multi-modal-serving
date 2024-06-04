@@ -31,6 +31,11 @@ class TritonPythonModel:
 
         # You must parse model_config. JSON string is not parsed here
         self.model_config = json.loads(args["model_config"])
+        self.output0_dtype = pb_utils.triton_string_to_numpy(
+            pb_utils.get_output_config_by_name(self.model_config, "OUTPUT0")[
+                "data_type"
+            ]
+        )
 
         # Instantiate the PyTorch model
         model_url = "/workspace/pretrained/model_base_nlvr.pth"
@@ -61,9 +66,6 @@ class TritonPythonModel:
           be the same as `requests`
         """
 
-        output_dtype = pb_utils.triton_string_to_numpy(
-            pb_utils.get_output_config_by_name(self.model_config,
-                                               "OUTPUT0")["data_type"])
 
         responses = []
 
@@ -86,7 +88,7 @@ class TritonPythonModel:
                 )
 
             answer_tensor = pb_utils.Tensor("OUTPUT0",
-                                            answer.astype(output_dtype))
+                                            answer.astype(self.output_dtype))
 
             inference_response = pb_utils.InferenceResponse(
                 output_tensors=[answer_tensor])

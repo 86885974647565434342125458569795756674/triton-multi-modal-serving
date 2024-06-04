@@ -4,6 +4,8 @@ import numpy as np
 import tritonclient.http as httpclient
 from tritonclient.utils import np_to_triton_dtype
 
+root_path='/dynamic_batch/triton-multi-modal-serving'
+
 model_name = "blip_vqa"
 batch_size = 32
 
@@ -11,7 +13,7 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
     start_time=time.time()
 
     images = np.array([
-        b"/workspace/demos/images/beach.jpg"] * batch_size)
+        root_path.encode('utf-8')+b"/demos/images/beach.jpg"] * batch_size)
     questions = np.array([
         b"where is the woman sitting?"] * batch_size)
     inputs = [
@@ -41,7 +43,7 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
 
     answers = response.as_numpy("OUTPUT0")
 
-    print(time.time()-start_time)
+    print("client:",start_time,time.time())
     
     print("IMAGE ({}) + QUESTION ({}) = ANSWER ({})".format(
-        images.shape, questions.shape, answers))
+        images.shape, questions.shape, answers.shape))

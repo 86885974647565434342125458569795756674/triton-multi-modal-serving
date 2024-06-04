@@ -31,6 +31,8 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
 
     # print("INPUT0 ({})  = OUTPUT0 ({})".format(input0_data.shape, output0_data.shape))
 
+    visual_time=time.time()
+
     # Text Encoder
     input0_data = output0_data
     input1_data = np.array(
@@ -65,6 +67,7 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
     #     )
     # )
 
+    text_encoder_time=time.time()
     # Text Decoder
     input0_data = output0_data
 
@@ -96,6 +99,6 @@ with httpclient.InferenceServerClient("localhost:8000") as client:
 
     output0_data = response.as_numpy("OUTPUT0")
 
-    print(time.time()-start_time)
+    print("client:",start_time,visual_time,text_encoder_time,time.time())
     
-    print("INPUT0 {} INPUT1 {} = OUTPUT0 {}".format(input0_data.shape,input1_data.shape,output0_data))
+    print("INPUT0 {} INPUT1 {} = OUTPUT0 {}".format(input0_data.shape,input1_data.shape,output0_data.shape))

@@ -1,7 +1,7 @@
 import json
 import torch
 from torch.profiler import profile, record_function, ProfilerActivity
-
+import time
 import triton_python_backend_utils as pb_utils
 from models.blip.blip_vqa_text_encoder import blip_vqa_text_encoder
 
@@ -27,7 +27,6 @@ class TritonPythonModel:
           * model_version: Model version
           * model_name: Model name
         """
-
         # You must parse model_config. JSON string is not parsed here
         self.model_config = json.loads(args["model_config"])
 
@@ -66,6 +65,7 @@ class TritonPythonModel:
           be the same as `requests`
         """
 
+        start=time.time()
         output0_dtype = self.output0_dtype
 
         responses = []
@@ -97,6 +97,7 @@ class TritonPythonModel:
             )
             responses.append(inference_response)
 
+        print(start,time.time())
         # You should return a list of pb_utils.InferenceResponse. Length
         # of this list must match the length of `requests` list.
         return responses
