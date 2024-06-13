@@ -15,8 +15,10 @@ outputss=[]
 responses=[]
 times=[]
 
+time_wait=9999999999
+
 async def infer_async(client, model_name, inputs, outputs):
-    response=await client.infer(model_name, inputs, outputs=outputs)
+    response=await client.infer(model_name, inputs, outputs=outputs, timeout=time_wait)
     return response,time.time()
 
 async def main_async():
@@ -48,7 +50,7 @@ async def main_async():
 def main():
     import tritonclient.http as httpclient
     for _ in range(user_num):
-        clients.append(httpclient.InferenceServerClient("localhost:8000"))
+        clients.append(httpclient.InferenceServerClient("localhost:8000",connection_timeout=time_wait, network_timeout=time_wait))
 
         inputss.append([
             httpclient.InferInput(
@@ -62,7 +64,7 @@ def main():
             httpclient.InferRequestedOutput("OUTPUT0"),
             ])
     for i in range(user_num):
-        responses.append(clients[i].infer(model_name, inputss[i], outputs=outputss[i]))
+        responses.append(clients[i].infer(model_name, inputss[i], outputs=outputss[i],timeout=time_wait))
         times.append(time.time())
     for client in clients:
         client.close()
