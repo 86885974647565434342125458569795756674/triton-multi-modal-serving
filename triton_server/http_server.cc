@@ -1143,10 +1143,13 @@ HTTPAPIServer::HTTPAPIServer(
           R"(/v2/systemsharedmemory(?:/region/([^/]+))?/(status|register|unregister))"),
       cudasharedmemory_regex_(
           R"(/v2/cudasharedmemory(?:/region/([^/]+))?/(status|register|unregister))"),
-      trace_regex_(R"(/v2/trace/setting)"), restricted_apis_(restricted_apis)
+      trace_regex_(R"(/v2/trace/setting)")	
 	//cyy
 	,batch_regex_(R"(/v2/batch/([^/]+)(?:/versions/([0-9]+))?)")
 	     //cyy
+	     , restricted_apis_(restricted_apis)
+	     
+
 {
   // FIXME, don't cache server metadata. The http endpoint should
   // not be deciding that server metadata will not change during
@@ -1651,7 +1654,7 @@ HTTPAPIServer::HandleDynamicBatchSchedulerChangeMaxBatchSize(
 			req, EVBufferToJson(&request, v, &v_idx, buffer_len, n));
 		int64_t max_batch_size;
 		RETURN_AND_RESPOND_IF_ERR(
-			req,MemberAsInt("max_batch_size", &max_batch_size));
+			req,request.MemberAsInt("max_batch_size", &max_batch_size));
 		RETURN_AND_RESPOND_IF_ERR(
 			req, TRITONSERVER_DynamicBatchSchedulerChangeMaxBatchSize(	
 				server_.get(), model_name.c_str(), requested_model_version, max_batch_size));

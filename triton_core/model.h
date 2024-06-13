@@ -222,7 +222,7 @@ class Model {
   //cyy
     Status SetBatchSize(const int64_t max_batch_size)
     {
-	return scheduler_->SetBatchSize(max_batch_size);
+	return scheduler_->Change_Max_batch_size(max_batch_size);
     }
   //cyy
 

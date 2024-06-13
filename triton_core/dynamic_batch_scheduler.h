@@ -89,7 +89,7 @@ class DynamicBatchScheduler : public Scheduler {
   void Stop() override { stop_ = true; }
 
   //cyy
-  void Change_Max_batch_size(size_t bs){
+  Status Change_Max_batch_size(size_t bs){
   	if(bs>0&&bs<=max_batch_size_in_config_&&bs!=max_batch_size_){
 		std::lock_guard<std::mutex> batch_size_lock(batch_size_mu_);
   		preferred_batch_sizes_.insert(bs);
@@ -98,6 +98,7 @@ class DynamicBatchScheduler : public Scheduler {
 		max_batch_size_=bs;
 		next_preferred_batch_size_=0;
 	}
+	return Status::Success;
   }
   //cyy
 
@@ -174,10 +175,8 @@ class DynamicBatchScheduler : public Scheduler {
   size_t max_batch_size_;
   size_t max_preferred_batch_size_;
   std::set<int32_t> preferred_batch_sizes_;
-  //cyy
-  std::mutex batch_size_mu_;
-  size_t max_batch_size_in_config_;
-  //cyy
+
+
   uint64_t pending_batch_delay_ns_;
   size_t pending_batch_size_;
 
@@ -202,6 +201,12 @@ class DynamicBatchScheduler : public Scheduler {
 
   // If true, the scheduler will try to retrieve responses from cache.
   bool response_cache_enabled_;
+
+  //cyy
+  std::mutex batch_size_mu_;
+  size_t max_batch_size_in_config_;
+  //cyy
+  
 
   // Per completion-id queues to store the ready responses
   std::deque<

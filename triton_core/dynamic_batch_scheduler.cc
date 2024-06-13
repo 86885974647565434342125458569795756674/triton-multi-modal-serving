@@ -102,7 +102,7 @@ DynamicBatchScheduler::DynamicBatchScheduler(
       enforce_equal_shape_tensors_(enforce_equal_shape_tensors),
       has_optional_input_(false), preserve_ordering_(preserve_ordering)
 	//cyy
-	,max_batch_size_in_config_(max_batch_size_)
+	,max_batch_size_in_config_((size_t)std::max(1, max_batch_size))
 	//cyy
 {
   rate_limiter_ = model_->Server()->GetRateLimiter();

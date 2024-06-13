@@ -560,8 +560,8 @@ InferenceServer::SetBatchSize(const std::string& model_name, const int64_t model
 	if (ready_state_ != ServerReadyState::SERVER_READY) {
 	      return Status(Status::Code::UNAVAILABLE, "Server not ready");
 	}
-	std::shared_ptr<Model>* model;
-	auto status = lserver->GetModel(model_name, model_version, &model)
+	std::shared_ptr<Model> model;
+	auto status = GetModel(model_name, model_version, &model);
 	if (!status.IsOk()) { 
 		return status;
 	}

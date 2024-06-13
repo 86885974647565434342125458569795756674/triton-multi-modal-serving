@@ -591,15 +591,15 @@ class HTTPAPIServer : public HTTPServer {
   // inference result tensors.
   TRITONSERVER_ResponseAllocator* allocator_;
 
-  //cyy
-  re2::RE2 batch_regex_;
-  //cyy
   re2::RE2 server_regex_;
   re2::RE2 model_regex_;
   re2::RE2 modelcontrol_regex_;
   re2::RE2 systemsharedmemory_regex_;
   re2::RE2 cudasharedmemory_regex_;
   re2::RE2 trace_regex_;
+  //cyy
+  re2::RE2 batch_regex_;
+  //cyy
 
   // [DLIS-5551] currently always performs basic conversion, only maps schema
   // of EXACT_MAPPING kind. MAPPING_SCHEMA and upcoming kinds are for
