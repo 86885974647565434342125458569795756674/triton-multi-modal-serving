@@ -2582,6 +2582,17 @@ TRITONSERVER_DECLSPEC struct TRITONSERVER_Error* TRITONSERVER_MetricFamilyNew(
     const TRITONSERVER_MetricKind kind, const char* name,
     const char* description);
 
+//cyy
+/// \param server The inference server object.
+/// \param model_name The name of the model.
+/// \param max_batch_size The max_batch_size to update
+/// \return a TRITONSERVER_Error indicating success or failure.
+TRITONSERVER_DECLSPEC struct TRITONSERVER_Error*
+TRITONSERVER_DynamicBatchSchedulerChangeMaxBatchSize(
+    struct TRITONSERVER_Server* server, const char* model_name, const int64_t model_version, const int64_t max_batch_size);
+//cyy
+
+
 /// Delete a metric family object.
 /// A TRITONSERVER_MetricFamily* object should be deleted AFTER its
 /// corresponding TRITONSERVER_Metric* objects have been deleted.

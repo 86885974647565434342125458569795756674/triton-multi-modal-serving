@@ -553,6 +553,23 @@ InferenceServer::InferAsync(std::unique_ptr<InferenceRequest>& request)
   return InferenceRequest::Run(request);
 }
 
+//cyy
+Status
+InferenceServer::SetBatchSize(const std::string& model_name, const int64_t model_version,const int64_t max_batch_size)
+{
+	if (ready_state_ != ServerReadyState::SERVER_READY) {
+	      return Status(Status::Code::UNAVAILABLE, "Server not ready");
+	}
+	std::shared_ptr<Model>* model;
+	auto status = lserver->GetModel(model_name, model_version, &model)
+	if (!status.IsOk()) { 
+		return status;
+	}
+        return model->SetBatchSize(max_batch_size);
+}
+//cyy
+
+
 Status
 InferenceServer::LoadModel(
     const std::unordered_map<

@@ -1144,6 +1144,9 @@ HTTPAPIServer::HTTPAPIServer(
       cudasharedmemory_regex_(
           R"(/v2/cudasharedmemory(?:/region/([^/]+))?/(status|register|unregister))"),
       trace_regex_(R"(/v2/trace/setting)"), restricted_apis_(restricted_apis)
+	//cyy
+	,batch_regex_(R"(/v2/batch/([^/]+)(?:/versions/([0-9]+))?)")
+	     //cyy
 {
   // FIXME, don't cache server metadata. The http endpoint should
   // not be deciding that server metadata will not change during
@@ -1609,6 +1612,55 @@ HTTPAPIServer::HandleRepositoryControl(
   RETURN_AND_RESPOND_IF_ERR(req, err);
   evhtp_send_reply(req, EVHTP_RES_OK);
 }
+
+
+//cyy
+void
+HTTPAPIServer::HandleDynamicBatchSchedulerChangeMaxBatchSize(
+		    evhtp_request_t* req, const std::string& model_name,const std::string& model_version_str)
+{
+	AddContentTypeHeader(req, "application/json");
+
+	if (req->method != htp_method_POST) {
+	      RETURN_AND_RESPOND_WITH_ERR(
+		      req, EVHTP_RES_METHNALLOWED, "Method Not Allowed");
+	}
+      
+	int64_t requested_model_version;
+	RETURN_AND_RESPOND_IF_ERR(
+	      req, GetModelVersionFromString(
+                    model_version_str.c_str(), &requested_model_version));
+		               
+	TRITONSERVER_Error* err = nullptr;
+	struct evbuffer_iovec* v = nullptr;
+	int v_idx = 0;
+	int n = evbuffer_peek(req->buffer_in, -1, NULL, NULL, 0);
+	if (n > 0) {
+		v = static_cast<struct evbuffer_iovec*>(
+	           alloca(sizeof(struct evbuffer_iovec) * n));
+		if (evbuffer_peek(req->buffer_in, -1, NULL, v, n) != n) {
+		     	RETURN_AND_RESPOND_IF_ERR(
+			        req, TRITONSERVER_ErrorNew(
+			             TRITONSERVER_ERROR_INTERNAL,"unexpected error getting load model request buffers"));
+		}
+	}
+	size_t buffer_len = evbuffer_get_length(req->buffer_in);
+	if (buffer_len > 0) {
+		triton::common::TritonJson::Value request;
+		RETURN_AND_RESPOND_IF_ERR(
+			req, EVBufferToJson(&request, v, &v_idx, buffer_len, n));
+		int64_t max_batch_size;
+		RETURN_AND_RESPOND_IF_ERR(
+			req,MemberAsInt("max_batch_size", &max_batch_size));
+		RETURN_AND_RESPOND_IF_ERR(
+			req, TRITONSERVER_DynamicBatchSchedulerChangeMaxBatchSize(	
+				server_.get(), model_name.c_str(), requested_model_version, max_batch_size));
+	}
+	RETURN_AND_RESPOND_IF_ERR(req, err);
+	evhtp_send_reply(req, EVHTP_RES_OK);
+}
+//cyy
+
 
 void
 HTTPAPIServer::HandleModelReady(
@@ -4589,6 +4641,13 @@ HTTPAPIServer::Handle(evhtp_request_t* req)
     return;
   }
   std::string model_name, version, kind;
+  //cyy
+    if (RE2::FullMatch(		    
+	 std::string(req->uri->path->full), batch_regex_, &model_name, &version)) {	 
+	    HandleDynamicBatchSchedulerChangeMaxBatchSize(req,model_name,version);
+	return;
+    }
+    //cyy
   if (RE2::FullMatch(
           std::string(req->uri->path->full), model_regex_, &model_name,
           &version, &kind)) {

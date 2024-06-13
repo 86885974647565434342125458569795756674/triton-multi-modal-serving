@@ -3261,6 +3261,22 @@ TRITONSERVER_ServerInferAsync(
   return nullptr;  // Success
 }
 
+
+
+//cyy
+TRITONAPI_DECLSPEC TRITONSERVER_Error*
+TRITONSERVER_DynamicBatchSchedulerChangeMaxBatchSize(
+	TRITONSERVER_Server* server, const char* model_name, const int64_t model_version,
+	const int64_t max_batch_size)
+{
+	tc::InferenceServer* lserver = reinterpret_cast<tc::InferenceServer*>(server);
+	RETURN_IF_STATUS_ERROR(lserver->SetBatchSize(model_name,model_version,max_batch_size));
+	return nullptr;  // success
+}
+//cyy
+
+
+
 //
 // TRITONSERVER_MetricFamily
 //

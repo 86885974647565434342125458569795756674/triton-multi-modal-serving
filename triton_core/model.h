@@ -219,6 +219,14 @@ class Model {
     return scheduler_->Enqueue(request);
   }
 
+  //cyy
+    Status SetBatchSize(const int64_t max_batch_size)
+    {
+	return scheduler_->SetBatchSize(max_batch_size);
+    }
+  //cyy
+
+
   // Return the number of in-flight inferences.
   size_t InflightInferenceCount()
   {

@@ -638,6 +638,14 @@ TRITONAPI_DECLSPEC void
 TRITONSERVER_ServerInferAsync()
 {
 }
+
+//cyy
+TRITONAPI_DECLSPEC void
+TRITONSERVER_DynamicBatchSchedulerChangeMaxBatchSize()
+{
+}
+//cyy
+
 TRITONAPI_DECLSPEC void
 TRITONBACKEND_ApiVersion()
 {

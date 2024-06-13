@@ -497,6 +497,10 @@ class HTTPAPIServer : public HTTPServer {
       TRITONSERVER_ResponseAllocator* allocator, void* buffer,
       void* buffer_userp, size_t byte_size, TRITONSERVER_MemoryType memory_type,
       int64_t memory_type_id);
+  //cyy
+    void HandleDynamicBatchSchedulerChangeMaxBatchSize(
+		        evhtp_request_t* req, const std::string& model_name,const std::string& model_version_str);
+  //cyy
   void HandleServerHealth(evhtp_request_t* req, const std::string& kind);
   void HandleServerMetadata(evhtp_request_t* req);
   void HandleModelReady(
@@ -587,6 +591,9 @@ class HTTPAPIServer : public HTTPServer {
   // inference result tensors.
   TRITONSERVER_ResponseAllocator* allocator_;
 
+  //cyy
+  re2::RE2 batch_regex_;
+  //cyy
   re2::RE2 server_regex_;
   re2::RE2 model_regex_;
   re2::RE2 modelcontrol_regex_;

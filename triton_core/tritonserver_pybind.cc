@@ -1618,7 +1618,20 @@ class PyServer : public PyWrapper<struct TRITONSERVER_Server> {
     scoped_rh.release();
     request->Release();
   }
+
+  //cyy
+    void DynamicBatchSchedulerChangeMaxBatchSizes(
+	const std::string& model_name, const int64_t model_version,
+	const int64_t max_batch_size) const
+    {
+	// load model is blocking, ensure to release GIL
+	py::gil_scoped_release release;
+        ThrowIfError(TRITONSERVER_DynamicBatchSchedulerChangeMaxBatchSize(
+                 triton_object_, model_name.c_str(), model_version, max_batch_size));
+    }
+  //cyy
 };
+
 
 class PyMetricFamily : public PyWrapper<struct TRITONSERVER_MetricFamily> {
  public:
