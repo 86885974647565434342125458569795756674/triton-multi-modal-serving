@@ -98,6 +98,7 @@ class DynamicBatchScheduler : public Scheduler {
 		max_batch_size_=bs;
 		next_preferred_batch_size_=0;
 	}
+	std::cout<<"Change_Max_batch_size:"<<max_batch_size_<<std::endl;
 	return Status::Success;
   }
   //cyy

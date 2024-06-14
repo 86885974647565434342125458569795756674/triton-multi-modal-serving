@@ -387,6 +387,7 @@ DynamicBatchScheduler::BatcherThread(const int nice)
           {
 	  std::lock_guard<std::mutex> batch_size_lock(batch_size_mu_);
 
+	  std::cout<<"before GetDynamicBatch:"<<max_batch_size_<<std::endl;
           // Use dynamic batching to get request(s) to execute.
           wait_microseconds = GetDynamicBatch();
 	  }
