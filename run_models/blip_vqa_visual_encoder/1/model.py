@@ -68,7 +68,7 @@ class TritonPythonModel:
           A list of pb_utils.InferenceResponse. The length of this list must
           be the same as `requests`
         """
-        start=time.time()
+        #start=time.time()
 
         output0_dtype = self.output0_dtype
 
@@ -81,10 +81,11 @@ class TritonPythonModel:
             in_0s.append(pb_utils.get_input_tensor_by_name(request, "INPUT0").as_numpy())
         in_0=numpy.concatenate(in_0s,axis=0) if len(in_0s)>1 else in_0s[0]
 
-        print(len(in_0))
-
         with torch.no_grad():
             out_0s = self.model(in_0)
+
+        print()
+        print(len(in_0))
 
         for i in range(len(in_0)):
             out_tensor_0 = pb_utils.Tensor("OUTPUT0", out_0s[i:i+1].astype(output0_dtype))

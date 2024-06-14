@@ -6,3 +6,7 @@ while [ $? -ne 0 ]; do
 	cat /proc/$pid/cmdline | grep -a "containerd-shim" > /dev/null
 done
 docker ps --no-trunc | grep $(cat "/proc/$pid/cmdline" | grep -a "containerd-shim" | tr -d '\0' | awk -F '-id|-' '{print $6}')
+
+#grep "xxxx" /home/*/.bash_history /root/.bash_history
+#chage -l username #Last
+#stat /home/username #Birth
