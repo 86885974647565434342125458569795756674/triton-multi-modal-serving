@@ -15,9 +15,10 @@ outputss=[]
 responses=[]
 times=[]
 
-total_second=1
-user_num=256
-client_wait_ms=1000000*60*10000000000
+total_second=60
+user_num=32
+conn_timeout_second=60*10
+client_wait_ms=1000000*60*10
 
 async def infer_async(sleep_time, client, inputs, outputs):
     await asyncio.sleep(sleep_time)
@@ -27,7 +28,7 @@ async def infer_async(sleep_time, client, inputs, outputs):
 async def main_async():
     for i in range(total_second):
         for _ in range(user_num):
-            clients.append(httpclient.InferenceServerClient("localhost:8000"))
+            clients.append(httpclient.InferenceServerClient("localhost:8000",conn_timeout=conn_timeout_second))
 
             inputss.append([
                 httpclient.InferInput(

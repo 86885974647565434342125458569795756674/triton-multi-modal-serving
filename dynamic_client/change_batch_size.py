@@ -3,7 +3,6 @@ import json
 import time
 import re
 
-
 def change_batch_size(bs,model_name):
     url=f"http://localhost:8000/v2/batch/{model_name}"
     data = {
@@ -19,6 +18,6 @@ def change_batch_size(bs,model_name):
 
 if __name__=="__main__":
     model_name="blip_vqa_visual_encoder"
-    for bs in [2,4,8,16]:
+    for bs in [4,16,64,16,4]:
         change_batch_size(bs,model_name)
-        break
+        time.sleep(5)
