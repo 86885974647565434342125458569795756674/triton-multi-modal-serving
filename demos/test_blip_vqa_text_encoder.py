@@ -1,47 +1,74 @@
-import sys
-
 import numpy as np
-import tritonclient.http as httpclient
+import time
 from tritonclient.utils import *
+import numpy as np
+import asyncio
+import tritonclient.http.aio as httpclient
 
-batch_size = 6
+root_path='/dynamic_batch/triton-multi-modal-serving'
+model_name = "blip_vqa_text_encoder"
 
-with httpclient.InferenceServerClient("localhost:8000") as client:
-    input0_data = np.repeat(np.load("/workspace/pretrained/images_embeds.npy"),batch_size,axis=0)
-    input1_data = np.array(
-        [b"where is the woman sitting?",b"which city is this photo taken?"]
-    )
-    input1_data = np.array(
-        [b"where is the woman sitting?"]*batch_size
-    )
+input0_data = np.load(root_path+"/pretrained/images_embeds.npy")
+input1_data = np.array([[b"where is the woman sitting?"]])
 
-    inputs = [
-        httpclient.InferInput(
-            "INPUT0", input0_data.shape, np_to_triton_dtype(input0_data.dtype)
-        ),
-        httpclient.InferInput(
-            "INPUT1", input1_data.shape, np_to_triton_dtype(input1_data.dtype)
-        ),
-    ]
+clients=[]
+inputss=[]
+outputss=[]
+responses=[]
+times=[]
 
-    inputs[0].set_data_from_numpy(input0_data)
-    inputs[1].set_data_from_numpy(input1_data)
+sleep_second=0.01
+total_second=5
+user_num=64
+conn_timeout_second=60*100
+client_wait_ms=1000000*60*100
 
-    outputs = [
-        httpclient.InferRequestedOutput("OUTPUT0"),
-    ]
+async def infer_async(sleep_time, client, inputs, outputs):
+    await asyncio.sleep(sleep_time*sleep_second)
+    response=await client.infer(model_name, inputs, outputs=outputs, timeout=client_wait_ms)
+    return response,time.time()
 
-    response = client.infer(
-        "blip_vqa_text_encoder", inputs, request_id=str(1), outputs=outputs
-    )
+async def main_async():
+    for i in range(total_second):
+        for _ in range(user_num):
+            clients.append(httpclient.InferenceServerClient("localhost:8000",conn_timeout=conn_timeout_second))
 
-    result = response.get_response()
+            inputss.append([
+                httpclient.InferInput(
+                    "INPUT0", input0_data.shape, np_to_triton_dtype(input0_data.dtype)
+                ),
+                httpclient.InferInput(
+                    "INPUT1", input1_data.shape, np_to_triton_dtype(input1_data.dtype)
+                ),
+            ])
 
-    output0_data = response.as_numpy("OUTPUT0")
 
-    print(
-        "INPUT0 {} + INPUT1 {} = OUTPUT0 {}".format(
-            input0_data.shape, input1_data, output0_data.shape
-        )
-    )
+            inputss[-1][0].set_data_from_numpy(input0_data)
+            inputss[-1][1].set_data_from_numpy(input1_data)
 
+            outputss.append([
+                httpclient.InferRequestedOutput("OUTPUT0"),
+                ])
+
+    tasks = [infer_async(t,clients[t*user_num+u], inputss[t*user_num+u], outputss[t*user_num+u]) for t in range(total_second) for u in range(user_num)]
+    responses_times = await asyncio.gather(*tasks)
+    for rt in responses_times:
+        responses.append(rt[0])
+        times.append(rt[1])
+
+    for client in clients:
+        await client.close()
+
+if __name__=="__main__":
+    print(user_num*total_second)
+    print(f"start client:{time.time()}")
+    asyncio.run(main_async())
+    print(f"end client:{time.time()}")
+
+    output0_datas = np.concatenate([response.as_numpy("OUTPUT0") for response in responses],axis=0)
+    print("OUTPUT0 {}".format(output0_datas.shape))
+    #times.sort()
+    #for t in times:
+     #   print(t)
+    
+    

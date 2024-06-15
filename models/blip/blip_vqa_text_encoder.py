@@ -49,7 +49,7 @@ class BLIP_VQA_TEXT_ENCODER(nn.Module):
         images_embeds = torch.from_numpy(images_embeds).to(device)
         images_atts = torch.ones(images_embeds.size()[:-1], dtype=torch.long).to(device)
         questions = self.tokenizer(
-            [question.decode("utf-8") for question in questions],
+            [question[0].decode("utf-8") for question in questions],
             padding="longest",
             truncation=True,
             max_length=35,

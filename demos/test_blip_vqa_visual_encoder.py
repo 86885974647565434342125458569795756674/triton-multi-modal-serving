@@ -60,7 +60,7 @@ if __name__=="__main__":
     #two problem:always have one left, print can be parallel
 
     output0_datas = np.concatenate([response.as_numpy("OUTPUT0") for response in responses],axis=0)
-    print("OUTPUT0 ({})".format(output0_datas.shape))
+    print("OUTPUT0 {}".format(output0_datas.shape))
     #times.sort()
     #for t in times:
      #   print(t)

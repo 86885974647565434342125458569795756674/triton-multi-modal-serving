@@ -17,10 +17,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 images_embeds = np.load(root_path+"/pretrained/images_embeds.npy")
 
 questions = np.array(
-    [b"where is the woman sitting?", b"which city is this photo taken?"]
-)
-questions = np.array(
-    [b"where is the woman sitting?"]
+    [[b"where is the woman sitting?"]]
 )
 # questions = np.full((batch_size,), b"where is the woman sitting?")
 #print(questions)
@@ -37,9 +34,9 @@ model = model.to(device)
 
 with torch.no_grad():
      questions_states = model(images_embeds, questions)
-#print(questions_states.shape,questions_states.dtype)
+print(questions_states.shape,questions_states.dtype)
 #(2, 1, 9, 768) float32
-#with open(root_path+"/pretrained/questions_states.npy", "wb") as f:
- #    np.save(f, questions_states)
+with open(root_path+"/pretrained/questions_states.npy", "wb") as f:
+     np.save(f, questions_states)
 
 

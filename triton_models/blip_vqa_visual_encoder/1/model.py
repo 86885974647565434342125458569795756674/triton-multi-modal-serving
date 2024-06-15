@@ -1,11 +1,13 @@
 import json
 import torch
 from torch.profiler import profile, record_function, ProfilerActivity
-
+import numpy
 import triton_python_backend_utils as pb_utils
 import time
-from models.blip.blip_vqa_text_decoder import blip_vqa_text_decoder
 
+from models.blip.blip_vqa_visual_encoder import blip_vqa_visual_encoder
+
+root_path='/dynamic_batch/triton-multi-modal-serving'
 
 class TritonPythonModel:
     """Your Python model must use the same class name. Every Python model
@@ -40,8 +42,8 @@ class TritonPythonModel:
         )
 
         # Instantiate the PyTorch model
-        model_url = "/workspace/pretrained/model_base_vqa_capfilt_large.pth"
-        self.model = blip_vqa_text_decoder(pretrained=model_url, vit="base")
+        model_url = root_path+"/pretrained/model_base_vqa_capfilt_large.pth"
+        self.model = blip_vqa_visual_encoder(pretrained=model_url, vit="base")
         self.model.eval()
         self.model = self.model.to("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -66,39 +68,34 @@ class TritonPythonModel:
           A list of pb_utils.InferenceResponse. The length of this list must
           be the same as `requests`
         """
+        #start=time.time()
 
-        start=time.time()
         output0_dtype = self.output0_dtype
 
         responses = []
-
+        in_0s=[]
         # Every Python backend must iterate over everyone of the requests
         # and create a pb_utils.InferenceResponse for each of them.
         for request in requests:
             # Get INPUT0
-            in_0 = pb_utils.get_input_tensor_by_name(request, "INPUT0")
-            in_1 = pb_utils.get_input_tensor_by_name(request, "INPUT1")
+            in_0s.append(pb_utils.get_input_tensor_by_name(request, "INPUT0").as_numpy())
+        in_0=numpy.concatenate(in_0s,axis=0) if len(in_0s)>1 else in_0s[0]
 
-            with torch.no_grad():
-                out_0 = self.model(in_0.as_numpy(),in_1.as_numpy())
-            # with profile(
-            #     activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-            #     record_shapes=True,
-            # ) as prof:
-            #     with torch.no_grad():
-            #         out_0 = self.model(in_0.as_numpy(), in_1.as_numpy())
-            #
-            # with open("/workspace/profiletable.txt", "w") as f:
-            #     print(prof.key_averages().table(), file=f)
+        with torch.no_grad():
+            out_0s = self.model(in_0)
 
-            out_tensor_0 = pb_utils.Tensor("OUTPUT0", out_0.astype(output0_dtype))
+        print()
+        print(f"blip_visual_encode:{len(in_0)}")
+
+        for i in range(len(in_0)):
+            out_tensor_0 = pb_utils.Tensor("OUTPUT0", out_0s[i:i+1].astype(output0_dtype))
 
             inference_response = pb_utils.InferenceResponse(
                 output_tensors=[out_tensor_0]
             )
             responses.append(inference_response)
 
-        print(start,time.time())
+        #print(start,time.time())
         # You should return a list of pb_utils.InferenceResponse. Length
         # of this list must match the length of `requests` list.
         return responses

@@ -22,6 +22,8 @@ if __name__=="__main__":
     
     if len(sys.argv) > 1:
         bs = int(sys.argv[1])
+        if len(sys.argv)>2:
+            model_name=sys.argv[2]
 
     print(f"set batch size:{bs}")
     change_batch_size(bs,model_name)
