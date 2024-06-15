@@ -15,10 +15,10 @@ outputss=[]
 responses=[]
 times=[]
 
-total_second=60
+total_second=5
 user_num=32
-conn_timeout_second=60*10
-client_wait_ms=1000000*60*10
+conn_timeout_second=60*100
+client_wait_ms=1000000*60*100
 
 async def infer_async(sleep_time, client, inputs, outputs):
     await asyncio.sleep(sleep_time)

@@ -3,9 +3,7 @@ backend: "python"
 
 max_batch_size: 128
 
-dynamic_batching {
-    max_queue_delay_microseconds: 100
-}
+dynamic_batching {}
 
 input [
   {

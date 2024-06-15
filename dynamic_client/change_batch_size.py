@@ -1,9 +1,10 @@
 import requests
 import json
 import time
-import re
+import sys
 
-time_slot=2
+bs=4
+model_name="blip_vqa_visual_encoder"
 
 def change_batch_size(bs,model_name):
     url=f"http://localhost:8000/v2/batch/{model_name}"
@@ -18,8 +19,9 @@ def change_batch_size(bs,model_name):
     print(response.status_code)
 
 if __name__=="__main__":
-    model_name="blip_vqa_visual_encoder"
-    for bs in [4,16,64,16,4]:
-        print(f"set batch size:{bs}")
-        change_batch_size(bs,model_name)
-        time.sleep(time_slot)
+    
+    if len(sys.argv) > 1:
+        bs = int(sys.argv[1])
+
+    print(f"set batch size:{bs}")
+    change_batch_size(bs,model_name)

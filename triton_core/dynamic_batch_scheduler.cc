@@ -387,7 +387,6 @@ DynamicBatchScheduler::BatcherThread(const int nice)
           {
 	  std::lock_guard<std::mutex> batch_size_lock(batch_size_mu_);
 
-	  std::cout<<"before GetDynamicBatch:"<<max_batch_size_<<std::endl;
           // Use dynamic batching to get request(s) to execute.
           wait_microseconds = GetDynamicBatch();
 	  }
@@ -401,6 +400,7 @@ DynamicBatchScheduler::BatcherThread(const int nice)
 
           // Extract batch only if there is pending batch
           auto pending_batch_queue_cnt = queue_.PendingBatchCount();
+	//std::cout<<" queue_.PendingBatchCount()"<< queue_.PendingBatchCount()<<std::endl;
           if ((wait_microseconds == 0) && (pending_batch_queue_cnt != 0)) {
             curr_payload_->ReserveRequests(pending_batch_queue_cnt);
             for (size_t idx = 0; idx < pending_batch_queue_cnt; ++idx) {
@@ -451,6 +451,8 @@ DynamicBatchScheduler::BatcherThread(const int nice)
         CustomBatchFini();
       }
       model_->Server()->GetRateLimiter()->EnqueuePayload(model_, curr_payload_);
+	//std::cout<<"EnqueuePayload:"<<curr_payload_->BatchSize()<<std::endl;
+      //can enqueue first and add request later???????
     }
 
     // Finish rejected and cancelled requests if any
@@ -593,6 +595,7 @@ DynamicBatchScheduler::GetDynamicBatch()
 
     if (preferred_batch_sizes_.find(pending_batch_size_ + payload_batch_size) !=
         preferred_batch_sizes_.end()) {
+	    //std::cout<<"prefer"<<pending_batch_size_ <<" "<< payload_batch_size<<std::endl;
       best_preferred_batch_size = pending_batch_size_;
       queue_.MarkCursor();
     }
@@ -615,6 +618,7 @@ DynamicBatchScheduler::GetDynamicBatch()
     }
     pending_batch_size_ = best_preferred_batch_size;
     queue_.SetCursorToMark();
+    //std::cout<<"0 pending_batch_size_:queued_batch_size_ "<<pending_batch_size_<<" "<<queued_batch_size_<<std::endl;
     return 0;
   }
 
@@ -633,6 +637,7 @@ DynamicBatchScheduler::GetDynamicBatch()
   }
 
   if (delay_is_exceeded || (pending_batch_delay_ns_ == 0)) {
+	//  std::cout<<"1 pending_batch_size_:queued_batch_size_"<<pending_batch_size_<<" "<<queued_batch_size_<<std::endl;
     return 0;
   }
 
