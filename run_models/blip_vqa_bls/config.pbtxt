@@ -1,7 +1,7 @@
 name: "blip_vqa_bls"
 backend: "python"
 
-max_batch_size: 1
+max_batch_size: 128
 
 input [
   {
