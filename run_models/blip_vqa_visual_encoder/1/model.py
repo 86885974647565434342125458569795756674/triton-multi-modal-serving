@@ -87,8 +87,9 @@ class TritonPythonModel:
         print()
         print(f"blip_visual_encode:{len(in_0)}")
 
-        for i in range(len(in_0)):
-            out_tensor_0 = pb_utils.Tensor("OUTPUT0", out_0s[i:i+1].astype(output0_dtype))
+        bs_per_req=len(in_0)//len(requests)#only for time test
+        for i in range(len(requests)):
+            out_tensor_0 = pb_utils.Tensor("OUTPUT0", out_0s[i*bs_per_req:(i+1)*bs_per_req].astype(output0_dtype))
 
             inference_response = pb_utils.InferenceResponse(
                 output_tensors=[out_tensor_0]

@@ -44,5 +44,6 @@ print(answers.shape)
 end_time=time.time()
 print(f"time={end_time-start_time}")
 #print(answers)
+#[b'on bench']
 with open(root_path+"/blip_vqa_text_decoder_time.txt","a") as f:
         f.write(f"{bs},{end_time-start_time}\n")
