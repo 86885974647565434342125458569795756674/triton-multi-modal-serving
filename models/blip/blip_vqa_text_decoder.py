@@ -27,9 +27,8 @@ class BLIP_VQA_TEXT_DECODER(nn.Module):
         super().__init__()
 
         self.visual_encoder, vision_width = create_vit(
-            vit, image_size, vit_grad_ckpt, vit_ckpt_layer, drop_path_rate=0.1
-        )
-
+                            vit, image_size, vit_grad_ckpt, vit_ckpt_layer, drop_path_rate=0.1
+                                    )
         self.tokenizer = init_tokenizer()
 
         decoder_config = BertConfig.from_json_file(med_config)

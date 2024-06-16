@@ -1,8 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 
 root_path="/dynamic_batch/triton-multi-modal-serving"
-file_name="blip_vqa_visual_encoder_time"
+file_name=sys.argv[1]+"_time"
+
 x_data=[]
 y_data=[]
 with open(root_path+'/'+file_name+'.txt', 'r') as f:
