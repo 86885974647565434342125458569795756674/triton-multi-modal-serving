@@ -103,7 +103,7 @@ class TritonPythonModel:
             out_0s = self.model(in_0,in_1)
 
         print()
-        print(len(in_0))
+        print(f"blip_vqa_text_decoder:{len(in_0)}")
             # with profile(
             #     activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
             #     record_shapes=True,

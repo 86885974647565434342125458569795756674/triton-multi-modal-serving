@@ -15,8 +15,8 @@ outputss=[]
 responses=[]
 times=[]
 
-total_second=5
-user_num=32
+total_second=1#5
+user_num=1#32
 conn_timeout_second=60*100
 client_wait_ms=1000000*60*100
 
@@ -54,13 +54,15 @@ async def main_async():
 
 if __name__=="__main__":
     print(user_num*total_second)
-    print(f"start client:{time.time()}")
+    start_time=time.time()
     asyncio.run(main_async())
-    print(f"end client:{time.time()}")
+    end_time=time.time()
+    print(f"start client={start_time},end client={end_time},end-start={end_time-start_time}")
     #two problem:always have one left, print can be parallel
 
-    output0_datas = np.concatenate([response.as_numpy("OUTPUT0") for response in responses],axis=0)
-    print("OUTPUT0 {}".format(output0_datas.shape))
+    print("finish")
+    #output0_datas = np.concatenate([response.as_numpy("OUTPUT0") for response in responses],axis=0)
+    #print("OUTPUT0 {}".format(output0_datas.shape))
     #times.sort()
     #for t in times:
      #   print(t)

@@ -4,6 +4,7 @@ from torch.profiler import profile, record_function, ProfilerActivity
 import numpy
 import triton_python_backend_utils as pb_utils
 import time
+from torch.utils.dlpack import from_dlpack, to_dlpack
 
 class TritonPythonModel:
     """Your Python model must use the same class name. Every Python model
@@ -68,7 +69,6 @@ class TritonPythonModel:
         for request in requests:
             # Get INPUT0
             in_0=pb_utils.get_input_tensor_by_name(request, "INPUT0")
-            in_1=pb_utils.get_input_tensor_by_name(request, "INPUT1")
 
             visual_encoder_request=pb_utils.InferenceRequest(
                               model_name='blip_vqa_visual_encoder',
@@ -81,11 +81,38 @@ class TritonPythonModel:
 
             in_0 = pb_utils.get_output_tensor_by_name(
                      visual_encoder_response, 'OUTPUT0')
-            
-            inference_response = pb_utils.InferenceResponse(
-                output_tensors=[in_0]
-            )
+            in_0 = from_dlpack(in_0.to_dlpack()).clone()
+            in_0 = pb_utils.Tensor.from_dlpack("INPUT0", to_dlpack(in_0))
 
+            in_1=pb_utils.get_input_tensor_by_name(request, "INPUT1")
+
+            text_encoder_request=pb_utils.InferenceRequest(
+                              model_name='blip_vqa_text_encoder',
+                                requested_output_names=['OUTPUT0'],
+                              inputs=[in_0,in_1])
+            text_encoder_response=text_encoder_request.exec()
+            
+            if text_encoder_response.has_error():
+                raise pb_utils.TritonModelException(text_encoder_response.error().message())
+
+            in_0 = pb_utils.get_output_tensor_by_name(
+                     text_encoder_response, 'OUTPUT0')
+            in_0 = from_dlpack(in_0.to_dlpack()).clone()
+            in_0 = pb_utils.Tensor.from_dlpack("INPUT0", to_dlpack(in_0))
+
+            text_decoder_request=pb_utils.InferenceRequest(
+                              model_name='blip_vqa_text_decoder',
+                                requested_output_names=['OUTPUT0'],
+                              inputs=[in_0])
+            text_decoder_response=text_decoder_request.exec()
+            
+            if text_decoder_response.has_error():
+                raise pb_utils.TritonModelException(text_decoder_response.error().message())
+
+            inference_response = pb_utils.InferenceResponse(
+                output_tensors=[pb_utils.get_output_tensor_by_name(
+                     text_decoder_response, 'OUTPUT0')]
+            )
             responses.append(inference_response)
 
         #print(start,time.time())
