@@ -43,13 +43,13 @@ with torch.no_grad():
 #with open(root_path+"/pretrained/questions_states.npy", "wb") as f:
  #    np.save(f, questions_states)
 
-start_time=time.time()
+#start_time=time.time()
 with torch.no_grad():
      questions_states = model(images_embeds, questions)
-print(questions_states.shape,questions_states.dtype)
-end_time=time.time()
-print(f"time={end_time-start_time}")
+#print(questions_states.shape,questions_states.dtype)
+#end_time=time.time()
+#print(f"time={end_time-start_time}")
 
-with open(root_path+"/blip_vqa_text_encoder_time.txt","a") as f:
-        f.write(f"{bs},{end_time-start_time}\n")
+#with open(root_path+"/blip_vqa_text_encoder_time.txt","a") as f:
+ #       f.write(f"{bs},{end_time-start_time}\n")
 

@@ -37,13 +37,13 @@ with torch.no_grad():
     answers = model(questions_states,questions_atts)
     #answers = model(questions_states)
 #print(answers)
-start_time=time.time()
+#start_time=time.time()
 with torch.no_grad():
     answers = model(questions_states,questions_atts)
-print(answers.shape)
-end_time=time.time()
-print(f"time={end_time-start_time}")
+#print(answers.shape)
+#end_time=time.time()
+#print(f"time={end_time-start_time}")
 #print(answers)
 #[b'on bench']
-with open(root_path+"/blip_vqa_text_decoder_time.txt","a") as f:
-        f.write(f"{bs},{end_time-start_time}\n")
+#with open(root_path+"/blip_vqa_text_decoder_time.txt","a") as f:
+ #       f.write(f"{bs},{end_time-start_time}\n")

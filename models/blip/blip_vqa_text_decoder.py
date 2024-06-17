@@ -40,9 +40,9 @@ class BLIP_VQA_TEXT_DECODER(nn.Module):
         #print("batch size:", batch_size)
 
         # Decoder
-#        start = torch.cuda.Event(enable_timing=True)
-#        end=torch.cuda.Event(enable_timing=True)
-#        start.record()
+        start = torch.cuda.Event(enable_timing=True)
+        end=torch.cuda.Event(enable_timing=True)
+        start.record()
 
         num_beams = 1
 
@@ -75,9 +75,9 @@ class BLIP_VQA_TEXT_DECODER(nn.Module):
             self.tokenizer.decode(output, skip_special_tokens=True).encode()
             for output in outputs
         ]
-#        end.record()
-#        torch.cuda.synchronize()
-#        print("text_decoder time:",  start.elapsed_time(end)/1000)
+        end.record()
+        torch.cuda.synchronize()
+        print("text_decoder time:",  start.elapsed_time(end)/1000)
 
         return np.array(answers)
 

@@ -37,15 +37,16 @@ model = model.to(device)
 with torch.no_grad():
     images_embeds = model(images)
 
-start_time=time.time()
+#start_time=time.time()
 with torch.no_grad():
     images_embeds = model(images)
-print(images_embeds.shape,images_embeds.dtype)
-end_time=time.time()
-print(f"time={end_time-start_time}")
+#print(images_embeds.shape,images_embeds.dtype)
+#end_time=time.time()
+#print(f"time={end_time-start_time}")
 
-with open(root_path+"/blip_vqa_visual_encoder_time.txt","a") as f:
-    f.write(f"{bs},{end_time-start_time}\n")
+#with open(root_path+"/blip_vqa_visual_encoder_time.txt","a") as f:
+ #   f.write(f"{bs},{end_time-start_time}\n")
+
 #(2, 901, 768) float32
 
 #with open(root_path+"/pretrained/images_embeds.npy", "wb") as f:

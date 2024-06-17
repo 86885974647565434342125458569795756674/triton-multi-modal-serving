@@ -38,9 +38,6 @@ class BLIP_VQA_VISUAL_ENCODER(nn.Module):
         #print("batch size:", image_urls.shape)
 
         # Visual Encoder
-#        start = torch.cuda.Event(enable_timing=True)
-#        end=torch.cuda.Event(enable_timing=True)
-#        start.record()
         transform = transforms.Compose([
             transforms.Resize(
                 (self.image_size, self.image_size),interpolation=InterpolationMode.BICUBIC,
@@ -53,16 +50,25 @@ class BLIP_VQA_VISUAL_ENCODER(nn.Module):
         ])
 
         #print(image_urls)
-        images = [transform(Image.open(image_url[0].decode()).convert("RGB")) for image_url in image_urls]
+        start=time.time()
+        images=[Image.open(image_url[0].decode()).convert("RGB") for image_url in image_urls]
+        print(f"open:{time.time()-start}")
+        start=time.time()
+        images = [transform(image) for image in images]
+        print(f"image preprocess:{time.time()-start}")
+
+        start = torch.cuda.Event(enable_timing=True)
+        end=torch.cuda.Event(enable_timing=True)
+        start.record()
         images = torch.stack(images).to(device)
         #print(images[0].shape,images.shape)
         #torch.Size([3, 480, 480]) torch.Size([1, 3, 480, 480])
         images_embeds = self.visual_encoder(images)
         images_embeds = images_embeds.numpy(force=True)#to(cpu)
         #print(images_embeds.shape)
-#        end.record()
-#        torch.cuda.synchronize()
-#        print("visual_encoder time:", start.elapsed_time(end)/1000)
+        end.record()
+        torch.cuda.synchronize()
+        print("visual_encoder time:", start.elapsed_time(end)/1000)
 
         return images_embeds
 
